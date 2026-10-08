@@ -1,7 +1,7 @@
 {
   "wifi_ssid": "engnrcf-guest-2.4GHz",
   "wifi_password": "akarenga-112years",
-  "gemini_api_key": "AQ.Ab8RN6I0grVBNaTOftDgLqsRrRbC7MRVeFsc-_LzRr66UDJpfA",
+  "gemini_api_key": "",
   "gemini_model": "gemini-3.8-flash",
   "tts_voice": "Kore",
   "wake_word": "スタックちゃん",
