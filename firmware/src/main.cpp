@@ -100,7 +100,7 @@ void setup() {
     AudioTask::init(g_config.mic_gain, g_config.spk_volume);
     AudioTask::start();
 
-    // 6. GC0308 カメラ初期化 (PMIC ALDO1/ALDO2電源投入 & I2Cポート1指定)
+    // 6. GC0308 カメラ初期化 (PMIC ALDO3電源投入 & I2Cポート1指定)
     CameraMotion::init();
 
     // 7. WiFi接続 (直接Google API接続用)
