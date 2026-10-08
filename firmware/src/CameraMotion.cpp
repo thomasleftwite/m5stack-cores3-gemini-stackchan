@@ -28,10 +28,8 @@ bool CameraMotion::isAvailable() {
 }
 
 bool CameraMotion::init() {
-    // 1. CoreS3 AXP2101 PMICのカメラ電源レールを通電 (これをしないとGC0308が無通電でProbe失敗する)
-    M5.Power.setALDO1(1800); // 1.8V for GC0308 DVDD (コア電源)
-    M5.Power.setALDO2(2800); // 2.8V for GC0308 AVDD (アナログ電源)
-    M5.Power.setALDO4(3300); // 3.3V for IO
+    // M5.begin() initializes the CoreS3 PMIC; ensure the camera's ALDO3 rail is on.
+    M5.Power.Axp2101.setALDO3(3300);
     delay(100);
 
     camera_config_t config;
