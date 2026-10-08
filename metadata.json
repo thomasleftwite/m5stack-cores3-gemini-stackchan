@@ -1,0 +1,6 @@
+{
+  "name": "M5Stack CoreS3 Lite Gemini AI Voice Stack-chan",
+  "description": "M5Stack CoreS3 Lite向けGemini音声チャットAI。スタックチャン感情アバター、低遅延ストリーミング、カメラ動体検知、非同期FreeRTOS最適化ファームウェアとリアルタイムWebエミュレータ。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
