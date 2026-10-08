@@ -1,5 +1,6 @@
 node_modules/
 firmware/.pio/
+firmware/data/config.json
 .next/
 coverage/
 .DS_Store
