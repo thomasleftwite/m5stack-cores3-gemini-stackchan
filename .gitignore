@@ -7,3 +7,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+firmware/.pio-core/
+.npm-cache/

@@ -18,8 +18,6 @@ import JSZip from "jszip";
 
 interface FirmwareCodeStudioProps {
   apiKeyParam: string;
-  wifiSsidParam: string;
-  wifiPassParam: string;
   ttsVoiceParam: string;
   wakeWordParam: string;
   silenceSecParam: number;
@@ -33,8 +31,6 @@ interface FirmwareCodeStudioProps {
 
 export const FirmwareCodeStudio: React.FC<FirmwareCodeStudioProps> = ({
   apiKeyParam,
-  wifiSsidParam,
-  wifiPassParam,
   ttsVoiceParam,
   wakeWordParam,
   silenceSecParam,
@@ -51,8 +47,6 @@ export const FirmwareCodeStudio: React.FC<FirmwareCodeStudioProps> = ({
 
   // Generate dynamic config.json content reflecting current props
   const currentConfigContent = `{
-  "wifi_ssid": "${wifiSsidParam || "YOUR_WIFI_SSID"}",
-  "wifi_password": "${wifiPassParam || "YOUR_WIFI_PASSWORD"}",
   "gemini_api_key": "${apiKeyParam || "AIzaSyYOUR_GEMINI_API_KEY"}",
   "gemini_model": "gemini-3.8-flash",
   "tts_voice": "${ttsVoiceParam}",
@@ -121,7 +115,7 @@ export const FirmwareCodeStudio: React.FC<FirmwareCodeStudioProps> = ({
               </span>
             </h2>
             <p className="text-[11px] text-neutral-400">
-              全ソースコードはそのままコンパイル・書き込み可能な本番仕様です
+              WiFiは実機の設定用APから登録します。実機動作は検証手順に沿って確認してください。
             </p>
           </div>
         </div>
@@ -194,7 +188,7 @@ export const FirmwareCodeStudio: React.FC<FirmwareCodeStudioProps> = ({
               pio run -t upload
             </div>
             <p className="text-[10px] text-neutral-400">
-              ※最初に <code>uploadfs</code> で <code>config.json</code> をLittleFSに転送してください。
+              ※<code>uploadfs</code> はGemini等の設定転送用です。WiFiは本体の「StackChan-Setup」から設定します。
             </p>
           </div>
         </div>

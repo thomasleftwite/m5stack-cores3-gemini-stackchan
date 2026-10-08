@@ -32,7 +32,8 @@ bool CameraMotion::init() {
     M5.Power.Axp2101.setALDO3(3300);
     delay(100);
 
-    camera_config_t config;
+    if (s_initialized) return true;
+    camera_config_t config{};
     config.ledc_channel = LEDC_CHANNEL_0;
     config.ledc_timer = LEDC_TIMER_0;
     config.pin_d0 = Y2_GPIO_NUM;
@@ -47,9 +48,10 @@ bool CameraMotion::init() {
     config.pin_pclk = PCLK_GPIO_NUM;
     config.pin_vsync = VSYNC_GPIO_NUM;
     config.pin_href = HREF_GPIO_NUM;
-    config.pin_sccb_sda = SIOD_GPIO_NUM; // 12
-    config.pin_sccb_scl = SIOC_GPIO_NUM; // 11
-    config.sccb_i2c_port = 1;            // M5内部I2Cポート0との衝突を回避するためI2Cポート1を指定
+    // A negative SDA selects the existing bus instead of installing a second driver.
+    config.pin_sccb_sda = -1;
+    config.pin_sccb_scl = -1;
+    config.sccb_i2c_port = M5.In_I2C.getPort();
     config.pin_pwdn = PWDN_GPIO_NUM;
     config.pin_reset = RESET_GPIO_NUM;
     config.xclk_freq_hz = 20000000;
@@ -69,10 +71,26 @@ bool CameraMotion::init() {
     s_prevFrame = (uint8_t*)ps_malloc(IMG_W * IMG_H);
     if (!s_prevFrame) {
         Serial.println("[Camera] Failed to alloc prevFrame buffer in PSRAM");
+        esp_camera_deinit();
         s_initialized = false;
         return false;
     }
-    memset(s_prevFrame, 0, IMG_W * IMG_H);
+
+    camera_fb_t* first = esp_camera_fb_get();
+    if (!first || first->width != IMG_W || first->height != IMG_H ||
+        first->format != PIXFORMAT_GRAYSCALE || first->len < IMG_W * IMG_H) {
+        if (first) esp_camera_fb_return(first);
+        free(s_prevFrame);
+        s_prevFrame = nullptr;
+        esp_camera_deinit();
+        Serial.println("[Camera] Failed to acquire a valid grayscale frame; using Touch/Voice mode");
+        return false;
+    }
+    memcpy(s_prevFrame, first->buf, IMG_W * IMG_H);
+    Serial.printf("[Camera] Frame verified: %ux%u grayscale bytes=%u\n",
+                  static_cast<unsigned>(first->width), static_cast<unsigned>(first->height),
+                  static_cast<unsigned>(first->len));
+    esp_camera_fb_return(first);
 
     s_initialized = true;
     Serial.println("[Camera] GC0308 Initialized successfully with QQVGA Motion Detector");
@@ -84,6 +102,11 @@ bool CameraMotion::checkMotion(int threshold) {
 
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) return false;
+    if (fb->width != IMG_W || fb->height != IMG_H ||
+        fb->format != PIXFORMAT_GRAYSCALE || fb->len < IMG_W * IMG_H) {
+        esp_camera_fb_return(fb);
+        return false;
+    }
 
     int changedPixels = 0;
     const int step = 4;

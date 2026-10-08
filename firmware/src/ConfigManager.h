@@ -4,8 +4,6 @@
 #include <LittleFS.h>
 
 struct AppConfig {
-    String wifi_ssid = "";
-    String wifi_password = "";
     String gemini_api_key = "";
     String gemini_model = "gemini-3.8-flash";
     String tts_voice = "Kore";
@@ -33,8 +31,6 @@ public:
         }
 
         JsonDocument doc;
-        doc["wifi_ssid"] = cfg.wifi_ssid;
-        doc["wifi_password"] = cfg.wifi_password;
         doc["gemini_api_key"] = cfg.gemini_api_key;
         doc["gemini_model"] = cfg.gemini_model;
         doc["tts_voice"] = cfg.tts_voice;
@@ -90,8 +86,6 @@ public:
             return false;
         }
 
-        cfg.wifi_ssid = doc["wifi_ssid"] | cfg.wifi_ssid;
-        cfg.wifi_password = doc["wifi_password"] | cfg.wifi_password;
         cfg.gemini_api_key = doc["gemini_api_key"] | cfg.gemini_api_key;
         cfg.gemini_model = doc["gemini_model"] | "gemini-3.8-flash";
         cfg.tts_voice = doc["tts_voice"] | "Kore";

@@ -4,7 +4,6 @@ import React from "react";
 import {
   Settings,
   Wifi,
-  Key,
   Mic,
   Volume2,
   Video,
@@ -16,10 +15,6 @@ import {
 } from "lucide-react";
 
 interface SettingsPanelProps {
-  wifiSsid: string;
-  setWifiSsid: (v: string) => void;
-  wifiPass: string;
-  setWifiPass: (v: string) => void;
   geminiApiKey: string;
   setGeminiApiKey: (v: string) => void;
   geminiModel: string;
@@ -46,10 +41,6 @@ interface SettingsPanelProps {
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
-  wifiSsid,
-  setWifiSsid,
-  wifiPass,
-  setWifiPass,
   geminiApiKey,
   setGeminiApiKey,
   geminiModel,
@@ -94,34 +85,16 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-        {/* Wi-Fi SSID */}
-        <div className="flex flex-col gap-1.5 bg-neutral-950 p-3 rounded-xl border border-neutral-800">
-          <label className="text-neutral-400 flex items-center gap-1.5 font-medium">
-            <Wifi className="w-3.5 h-3.5 text-cyan-400" />
-            Wi-Fi SSID
-          </label>
-          <input
-            type="text"
-            value={wifiSsid}
-            onChange={(e) => setWifiSsid(e.target.value)}
-            placeholder="例: MyHome-WiFi_2.4G"
-            className="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-neutral-100 font-mono focus:outline-none focus:border-cyan-500"
-          />
-        </div>
-
-        {/* Wi-Fi Password */}
-        <div className="flex flex-col gap-1.5 bg-neutral-950 p-3 rounded-xl border border-neutral-800">
-          <label className="text-neutral-400 flex items-center gap-1.5 font-medium">
-            <Key className="w-3.5 h-3.5 text-cyan-400" />
-            Wi-Fi パスワード
-          </label>
-          <input
-            type="password"
-            value={wifiPass}
-            onChange={(e) => setWifiPass(e.target.value)}
-            placeholder="WPA2/WPA3 パスワード"
-            className="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-neutral-100 font-mono focus:outline-none focus:border-cyan-500"
-          />
+        <div className="flex flex-col gap-1.5 bg-neutral-950 p-3 rounded-xl border border-cyan-800 md:col-span-2 lg:col-span-3">
+          <span className="text-cyan-300 flex items-center gap-1.5 font-medium">
+            <Wifi className="w-3.5 h-3.5" />
+            WiFiは本体からスマホで設定
+          </span>
+          <p className="text-neutral-300 leading-relaxed">
+            初回または接続失敗時、本体が「StackChan-Setup」を起動します。
+            スマホをこのWiFiに接続し、ブラウザで http://192.168.4.1 を開いて接続先を保存してください。
+            接続先を変更するときは、再起動直後の5秒以内に本体画面を3秒間押し続けます。
+          </p>
         </div>
 
         {/* Gemini API Key */}
@@ -295,7 +268,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
           <p className="text-[10px] text-neutral-500">
-            ※M5Stack CoreS3 LiteのPort A(赤色Groveコネクタ)から、SG90の信号線を接続します（G2:Pan/左右, G1:Tilt/上下, 5V, GND）。
+            現在はサーボ再有効化版です。通常のGroveケーブルを使用する場合、動作時はPCのUSBを外し、TAKAO基板の外部電源のみで給電してください。書込み時は外部電源OFFでGroveを外します。外部給電で消灯せずタップ復帰する動作を2回確認しました。長時間安定性は未確認です。
           </p>
         </div>
       </div>
