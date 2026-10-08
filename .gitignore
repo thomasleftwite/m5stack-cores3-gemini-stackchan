@@ -1,4 +1,5 @@
 node_modules/
+firmware/.pio/
 .next/
 coverage/
 .DS_Store
