@@ -36,8 +36,6 @@ export default function HomePage() {
   const [audioInputLevel, setAudioInputLevel] = useState<number>(0);
 
   // Settings
-  const [wifiSsid, setWifiSsid] = useState("MyHome-WiFi_2.4G");
-  const [wifiPass, setWifiPass] = useState("");
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [geminiModel, setGeminiModel] = useState("gemini-3.8-flash");
   const [ttsVoice, setTtsVoice] = useState("Kore");
@@ -69,8 +67,6 @@ export default function HomePage() {
 
   // Reset defaults handler
   const handleResetDefaults = () => {
-    setWifiSsid("MyHome-WiFi_2.4G");
-    setWifiPass("");
     setGeminiApiKey("");
     setGeminiModel("gemini-3.8-flash");
     setTtsVoice("Kore");
@@ -430,10 +426,6 @@ export default function HomePage() {
         {/* Configuration Parameter Editor (config.json) */}
         <div id="settings-panel">
           <SettingsPanel
-            wifiSsid={wifiSsid}
-            setWifiSsid={setWifiSsid}
-            wifiPass={wifiPass}
-            setWifiPass={setWifiPass}
             geminiApiKey={geminiApiKey}
             setGeminiApiKey={setGeminiApiKey}
             geminiModel={geminiModel}
@@ -464,8 +456,6 @@ export default function HomePage() {
         <div id="code-studio">
           <FirmwareCodeStudio
             apiKeyParam={geminiApiKey}
-            wifiSsidParam={wifiSsid}
-            wifiPassParam={wifiPass}
             ttsVoiceParam={ttsVoice}
             wakeWordParam={wakeWord}
             silenceSecParam={silenceTimeoutSec}

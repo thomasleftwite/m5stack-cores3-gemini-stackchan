@@ -1,5 +1,6 @@
 #include <M5Unified.h>
 #include <WiFi.h>
+#include <WiFiManager.h>
 #include "ConfigManager.h"
 #include "StackChanAvatar.h"
 #include "AudioTask.h"
@@ -42,6 +43,77 @@ static void logWiFiEvent(arduino_event_id_t event, arduino_event_info_t info) {
         default:
             break;
     }
+}
+
+// WiFi credentials are managed by WiFiManager in ESP32 NVS, not config.json.
+static constexpr const char* WIFI_SETUP_AP = "StackChan-Setup";
+
+static void showWiFiPortal(WiFiManager* manager) {
+    M5.Display.fillScreen(TFT_BLACK);
+    M5.Display.setCursor(8, 12);
+    M5.Display.setTextSize(2);
+    M5.Display.setTextColor(TFT_WHITE, TFT_BLACK);
+    M5.Display.println("WiFi setup");
+    M5.Display.println();
+    M5.Display.println(WIFI_SETUP_AP);
+    M5.Display.println("Open on your phone:");
+    M5.Display.println("http://192.168.4.1");
+    M5.Display.println();
+    M5.Display.println("Select WiFi and Save");
+    Serial.println("[WiFi] Setup AP active. Open http://192.168.4.1 on your phone.");
+}
+
+static void setupWiFi() {
+    WiFi.mode(WIFI_STA);
+    WiFi.onEvent(logWiFiEvent);
+    WiFiManager manager;
+    manager.setDebugOutput(false); // Do not log SSIDs or passwords.
+    manager.setConnectTimeout(20);
+    manager.setConfigPortalTimeout(0); // Wait for setup; allow retries after a wrong password.
+    manager.setAPCallback(showWiFiPortal);
+
+    // Hold the touchscreen for 3 seconds during this 5-second startup window
+    // to change networks even when the saved network is still available.
+    M5.Display.fillScreen(TFT_BLACK);
+    M5.Display.setCursor(8, 12);
+    M5.Display.setTextSize(2);
+    M5.Display.setTextColor(TFT_WHITE, TFT_BLACK);
+    M5.Display.println("WiFi startup");
+    M5.Display.println();
+    M5.Display.println("To change WiFi:");
+    M5.Display.println("Hold screen 3 sec");
+    bool forcePortal = false;
+    uint32_t holdStart = 0;
+    bool holding = false;
+    const uint32_t windowStart = millis();
+    while (millis() - windowStart < 5000) {
+        M5.update();
+        if (M5.Touch.getCount() > 0) {
+            if (!holding) {
+                holding = true;
+                holdStart = millis();
+            }
+            if (millis() - holdStart >= 3000) {
+                forcePortal = true;
+                break;
+            }
+        } else {
+            holding = false;
+        }
+        delay(20);
+    }
+
+    const bool connected = forcePortal
+        ? manager.startConfigPortal(WIFI_SETUP_AP)
+        : manager.autoConnect(WIFI_SETUP_AP);
+    if (!connected || WiFi.status() != WL_CONNECTED) {
+        Serial.println("[WiFi] Setup ended without a connection. Restarting...");
+        delay(1000);
+        ESP.restart();
+        while (true) delay(1000);
+    }
+    WiFi.setAutoReconnect(true);
+    Serial.println("[WiFi] Setup complete.");
 }
 
 // 1. アバター描画 & サーボ補間タスク (Core 1 / 60FPS)
@@ -100,6 +172,14 @@ void setup() {
 
     // 2. 設定ファイル読み込み (LittleFS破損時は自動フォーマット & デフォルト作成)
     ConfigManager::load(g_config);
+#if STACKCHAN_SERVO_OUTPUT_DISABLED
+    // Keep WiFi/voice/API operation available while servo power is being corrected.
+    g_config.servo_enabled = false;
+    Serial.println("[Servo] Output disabled by build setting; power validation pending.");
+#endif
+
+    // Configure WiFi before starting the avatar, audio, camera or servos.
+    setupWiFi();
 
     // 3. Port A SG90 サーボ初期化 (14bit LEDC PWM 50Hz)
     if (g_config.servo_enabled) {
@@ -120,28 +200,8 @@ void setup() {
     AudioTask::init(g_config.mic_gain, g_config.spk_volume);
     AudioTask::start();
 
-    // 6. GC0308 カメラ初期化 (PMIC ALDO3電源投入 & I2Cポート1指定)
-    CameraMotion::init();
-
-    // 7. WiFi接続 (直接Google API接続用)
-    if (g_config.wifi_ssid.length() > 0) {
-        WiFi.onEvent(logWiFiEvent);
-        Serial.println("[WiFi] Connecting using saved configuration...");
-        WiFi.begin(g_config.wifi_ssid.c_str(), g_config.wifi_password.c_str());
-        int retry = 0;
-        while (WiFi.status() != WL_CONNECTED && retry < 25) {
-            delay(400);
-            Serial.print(".");
-            retry++;
-        }
-        if (WiFi.status() == WL_CONNECTED) {
-            Serial.printf("\n[WiFi] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
-        } else {
-            Serial.printf("\n[WiFi] Startup wait timed out. Status: %d. Auto-reconnect: %s\n",
-                          static_cast<int>(WiFi.status()),
-                          WiFi.getAutoReconnect() ? "enabled" : "disabled");
-        }
-    }
+    // 6. GC0308 camera initialization using the existing internal I2C bus.
+    const bool cameraReady = CameraMotion::init();
 
     // 8. Geminiクライアント初期化
     GeminiClient::init(g_config.gemini_api_key, g_config.gemini_model, g_config.tts_voice);
@@ -150,7 +210,8 @@ void setup() {
     xTaskCreatePinnedToCore(avatarTaskCode, "AvatarTask", 4096, nullptr, 2, &hAvatarTask, 1);
     xTaskCreatePinnedToCore(motionTaskCode, "MotionTask", 4096, nullptr, 1, &hMotionTask, 0);
 
-    Serial.println("[System] All peripherals initialized cleanly. Entering SLEEP state.");
+    Serial.printf("[System] Startup complete. Camera=%s. Entering SLEEP state.\n",
+                  cameraReady ? "ready" : "unavailable (Touch/Voice mode)");
 }
 
 void loop() {
@@ -196,7 +257,7 @@ void loop() {
                 g_avatar.setEmotion(EMOTION_THINKING);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_THINKING);
 
-                GeminiClient::sendUserPromptStream(
+                const bool requestOk = GeminiClient::sendUserPromptStream(
                     "こんにちは！元気？", // 実機録音テキスト
                     [](AvatarEmotion emo) {
                         g_avatar.setEmotion(emo);
@@ -209,6 +270,10 @@ void loop() {
                     }
                 );
 
+                if (!requestOk) {
+                    g_avatar.setEmotion(EMOTION_SAD);
+                    if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SAD);
+                }
                 g_state = STATE_WAIT_FOLLOWUP;
                 AudioTask::resetSilenceTimer();
             }
