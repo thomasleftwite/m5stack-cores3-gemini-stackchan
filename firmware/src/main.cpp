@@ -24,6 +24,26 @@ volatile AppState g_state = STATE_SLEEP;
 TaskHandle_t hAvatarTask = nullptr;
 TaskHandle_t hMotionTask = nullptr;
 
+static void logWiFiEvent(arduino_event_id_t event, arduino_event_info_t info) {
+    switch (event) {
+        case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+            Serial.println("\n[WiFi] Associated with access point. Waiting for DHCP...");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+            Serial.printf("\n[WiFi] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
+            break;
+        case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+            Serial.printf("\n[WiFi] Disconnected from access point. Reason: %u\n",
+                          static_cast<unsigned>(info.wifi_sta_disconnected.reason));
+            break;
+        case ARDUINO_EVENT_WIFI_STA_LOST_IP:
+            Serial.println("\n[WiFi] Lost IP address.");
+            break;
+        default:
+            break;
+    }
+}
+
 // 1. アバター描画 & サーボ補間タスク (Core 1 / 60FPS)
 void avatarTaskCode(void* pv) {
     while (true) {
@@ -105,7 +125,8 @@ void setup() {
 
     // 7. WiFi接続 (直接Google API接続用)
     if (g_config.wifi_ssid.length() > 0) {
-        Serial.printf("[WiFi] Connecting to %s...\n", g_config.wifi_ssid.c_str());
+        WiFi.onEvent(logWiFiEvent);
+        Serial.println("[WiFi] Connecting using saved configuration...");
         WiFi.begin(g_config.wifi_ssid.c_str(), g_config.wifi_password.c_str());
         int retry = 0;
         while (WiFi.status() != WL_CONNECTED && retry < 25) {
@@ -116,7 +137,9 @@ void setup() {
         if (WiFi.status() == WL_CONNECTED) {
             Serial.printf("\n[WiFi] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
         } else {
-            Serial.println("\n[WiFi] Connection timeout. Retrying in background...");
+            Serial.printf("\n[WiFi] Startup wait timed out. Status: %d. Auto-reconnect: %s\n",
+                          static_cast<int>(WiFi.status()),
+                          WiFi.getAutoReconnect() ? "enabled" : "disabled");
         }
     }
 
