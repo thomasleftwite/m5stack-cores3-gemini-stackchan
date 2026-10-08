@@ -146,41 +146,37 @@ export const StackChanFace: React.FC<StackChanFaceProps> = ({
       ctx.fillStyle = "#111827"; // Deep slate / obsidian
       ctx.fillRect(0, 0, width, height);
 
-      // Subtle screen scanlines effect
-      ctx.fillStyle = "rgba(255, 255, 255, 0.015)";
-      for (let y = 0; y < height; y += 3) {
-        ctx.fillRect(0, y, width, 1);
-      }
-
       // Coordinates
       const lx = 100 + st.gazeX * 10;
       const rx = 220 + st.gazeX * 10;
       const cy = 115 + st.gazeY * 8;
       const eyeColor = "#FFFFFF";
 
-      // 4. Draw Eyebrows
-      ctx.fillStyle = eyeColor;
-      const browLen = 38;
-      const browThick = 5.5;
-      const browBaseY = 66 + st.eyebrowY;
+      // 4. Draw Eyebrows (Hide during SLEEP to prevent extra horizontal lines)
+      if (emotion !== "SLEEP") {
+        ctx.fillStyle = eyeColor;
+        const browLen = 38;
+        const browThick = 5.5;
+        const browBaseY = 66 + st.eyebrowY;
 
-      // Left eyebrow
-      ctx.save();
-      ctx.translate(lx, browBaseY);
-      ctx.rotate((st.eyebrowAngle * Math.PI) / 180);
-      ctx.beginPath();
-      ctx.roundRect(-browLen / 2, -browThick / 2, browLen, browThick, 3);
-      ctx.fill();
-      ctx.restore();
+        // Left eyebrow
+        ctx.save();
+        ctx.translate(lx, browBaseY);
+        ctx.rotate((st.eyebrowAngle * Math.PI) / 180);
+        ctx.beginPath();
+        ctx.roundRect(-browLen / 2, -browThick / 2, browLen, browThick, 3);
+        ctx.fill();
+        ctx.restore();
 
-      // Right eyebrow
-      ctx.save();
-      ctx.translate(rx, browBaseY);
-      ctx.rotate((-st.eyebrowAngle * Math.PI) / 180);
-      ctx.beginPath();
-      ctx.roundRect(-browLen / 2, -browThick / 2, browLen, browThick, 3);
-      ctx.fill();
-      ctx.restore();
+        // Right eyebrow
+        ctx.save();
+        ctx.translate(rx, browBaseY);
+        ctx.rotate((-st.eyebrowAngle * Math.PI) / 180);
+        ctx.beginPath();
+        ctx.roundRect(-browLen / 2, -browThick / 2, browLen, browThick, 3);
+        ctx.fill();
+        ctx.restore();
+      }
 
       // 5. Draw Eyes
       if (emotion === "HAPPY") {
@@ -208,19 +204,17 @@ export const StackChanFace: React.FC<StackChanFaceProps> = ({
         ctx.arc(rx + 28, cy + 24, 10, 0, Math.PI * 2);
         ctx.fill();
       } else if (emotion === "SLEEP" || st.eyeOpen <= 0.05) {
-        // Closed eye horizontal lines with soft curve
+        // Closed eyes with soft cute downward arch curve
         ctx.strokeStyle = eyeColor;
         ctx.lineWidth = 5;
         ctx.lineCap = "round";
 
         ctx.beginPath();
-        ctx.moveTo(lx - 20, cy);
-        ctx.quadraticCurveTo(lx, cy + 3, lx + 20, cy);
+        ctx.arc(lx, cy + 6, 18, Math.PI * 1.15, Math.PI * 1.85, false);
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.moveTo(rx - 20, cy);
-        ctx.quadraticCurveTo(rx, cy + 3, rx + 20, cy);
+        ctx.arc(rx, cy + 6, 18, Math.PI * 1.15, Math.PI * 1.85, false);
         ctx.stroke();
 
         // Sleep Zzz floating particles
@@ -276,12 +270,14 @@ export const StackChanFace: React.FC<StackChanFaceProps> = ({
         }
       }
 
-      // 6. Draw Mouth
+      // 6. Draw Mouth (No mouth during SLEEP to remove unwanted horizontal white lines)
       const mx = 160;
       const my = 182;
       const mouthColor = "#FB7185"; // rose pink
 
-      if (st.mouthOpen > 0.08) {
+      if (emotion === "SLEEP") {
+        // Do not draw mouth during SLEEP - peaceful closed face with no horizontal line
+      } else if (st.mouthOpen > 0.08) {
         // Lip sync dynamic mouth
         const mw = 22 + st.mouthOpen * 24;
         const mh = 8 + st.mouthOpen * 32;

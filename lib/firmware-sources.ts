@@ -726,10 +726,9 @@ void StackChanAvatar::drawEyes() {
     }
 
     if (_emotion == EMOTION_SLEEP || _eyeOpen <= 0.05f) {
-        _canvas.drawFastHLine(leftCenterX - 20, centerY, 40, eyeColor);
-        _canvas.drawFastHLine(leftCenterX - 20, centerY + 1, 40, eyeColor);
-        _canvas.drawFastHLine(rightCenterX - 20, centerY, 40, eyeColor);
-        _canvas.drawFastHLine(rightCenterX - 20, centerY + 1, 40, eyeColor);
+        // 睡眠時は優しいアーチ状の閉じた目 (上向きの円弧で穏やかな寝顔)
+        _canvas.drawArc(leftCenterX, centerY + 6, 16, 20, 200, 340, eyeColor);
+        _canvas.drawArc(rightCenterX, centerY + 6, 16, 20, 200, 340, eyeColor);
         return;
     }
 
@@ -752,6 +751,10 @@ void StackChanAvatar::drawEyes() {
 }
 
 void StackChanAvatar::drawEyebrows() {
+    if (_emotion == EMOTION_SLEEP) {
+        return; // 睡眠時は眉毛を描画しない（不要な横線の除去）
+    }
+
     uint16_t browColor = TFT_WHITE;
     int browLen = 36;
     int browThick = 5;
@@ -768,6 +771,10 @@ void StackChanAvatar::drawEyebrows() {
 }
 
 void StackChanAvatar::drawMouth() {
+    if (_emotion == EMOTION_SLEEP) {
+        return; // 睡眠時は口（不要な横白線）を描画しない
+    }
+
     int cx = 160;
     int cy = 180;
     uint16_t mouthColor = 0xFBEF;
