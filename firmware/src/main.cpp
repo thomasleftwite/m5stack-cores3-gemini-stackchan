@@ -214,17 +214,20 @@ void setup() {
                   cameraReady ? "ready" : "unavailable (Touch/Voice mode)");
 }
 
+static uint32_t s_speechEndTimestamp = 0;
+
 void loop() {
     M5.update();
     uint32_t silenceMs = AudioTask::getSilenceDurationMs();
 
     // 画面タッチでも強制ウェイクアップ可能
     if (M5.BtnA.wasClicked() || M5.Touch.getCount() > 0) {
-        if (g_state == STATE_SLEEP) {
-            Serial.println("[Touch] Screen tapped! Waking up...");
+        if (g_state == STATE_SLEEP || g_state == STATE_STANDBY_WAIT_KEYWORD) {
+            Serial.println("[Touch] Screen tapped! Waking up to LISTENING...");
             g_state = STATE_LISTENING;
             g_avatar.setEmotion(EMOTION_HAPPY);
             if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_HAPPY);
+            AudioTask::startRecording();
             AudioTask::resetSilenceTimer();
         }
     }
@@ -239,6 +242,7 @@ void loop() {
                 g_avatar.setEmotion(EMOTION_HAPPY);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_HAPPY);
                 g_state = STATE_LISTENING;
+                AudioTask::startRecording();
                 AudioTask::resetSilenceTimer();
             } else if (silenceMs > 8000) {
                 Serial.println("[Timeout] No wake sound. Returning to SLEEP.");
@@ -251,46 +255,85 @@ void loop() {
         case STATE_LISTENING:
             if (AudioTask::isVoiceDetected()) {
                 AudioTask::resetSilenceTimer();
-            } else if (silenceMs > 1800) {
-                Serial.println("[VAD] End of user speech detected. Sending to Gemini directly...");
+            } else if (silenceMs > 1500) {
+                // 発話終端検出
+                AudioTask::stopRecording();
                 g_state = STATE_THINKING;
                 g_avatar.setEmotion(EMOTION_THINKING);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_THINKING);
 
-                const bool requestOk = GeminiClient::sendUserPromptStream(
-                    "こんにちは！元気？", // 実機録音テキスト
-                    [](AvatarEmotion emo) {
-                        g_avatar.setEmotion(emo);
-                        if (g_config.servo_enabled) ServoControl::setEmotion(emo);
-                        g_state = STATE_SPEAKING;
-                    },
-                    [](const String& token) {},
-                    [](const uint8_t* pcm, size_t len) {
-                        AudioTask::enqueueAudioChunk(pcm, len);
-                    }
-                );
+                bool requestOk = false;
+                size_t samples = 0;
+                const int16_t* pcm = AudioTask::getRecordedPCM(&samples);
 
-                if (!requestOk) {
+                if (AudioTask::hasMeaningfulSpeech() && pcm && samples > 1600) {
+                    Serial.println("[VAD] Meaningful user speech recorded. Sending audio to Gemini...");
+                    requestOk = GeminiClient::sendUserAudioDialogue(
+                        pcm,
+                        samples,
+                        [](AvatarEmotion emo) {
+                            g_avatar.setEmotion(emo);
+                            if (g_config.servo_enabled) ServoControl::setEmotion(emo);
+                        },
+                        [](const String& token) {},
+                        [](const uint8_t* ttsPcm, size_t len) {
+                            AudioTask::enqueueAudioChunk(ttsPcm, len);
+                        }
+                    );
+                } else {
+                    Serial.println("[VAD] Tap or brief prompt. Sending text greeting to Gemini...");
+                    requestOk = GeminiClient::sendUserPromptStream(
+                        "こんにちは！元気？",
+                        [](AvatarEmotion emo) {
+                            g_avatar.setEmotion(emo);
+                            if (g_config.servo_enabled) ServoControl::setEmotion(emo);
+                        },
+                        [](const String& token) {},
+                        [](const uint8_t* ttsPcm, size_t len) {
+                            AudioTask::enqueueAudioChunk(ttsPcm, len);
+                        }
+                    );
+                }
+
+                if (requestOk && AudioTask::isPlaying()) {
+                    g_state = STATE_SPEAKING;
+                } else if (!requestOk) {
                     g_avatar.setEmotion(EMOTION_SAD);
                     if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SAD);
+                    g_state = STATE_WAIT_FOLLOWUP;
+                    AudioTask::resetSilenceTimer();
+                    s_speechEndTimestamp = millis();
+                } else {
+                    g_state = STATE_WAIT_FOLLOWUP;
+                    AudioTask::resetSilenceTimer();
+                    s_speechEndTimestamp = millis();
                 }
-                g_state = STATE_WAIT_FOLLOWUP;
-                AudioTask::resetSilenceTimer();
             }
             break;
 
         case STATE_SPEAKING:
             if (!AudioTask::isPlaying()) {
+                Serial.println("[Speech] Audio playback finished. Transitioning to WAIT_FOLLOWUP.");
                 g_state = STATE_WAIT_FOLLOWUP;
                 AudioTask::resetSilenceTimer();
+                s_speechEndTimestamp = millis();
             }
             break;
 
         case STATE_WAIT_FOLLOWUP:
-            if (AudioTask::isVoiceDetected()) {
-                g_state = STATE_LISTENING;
-                AudioTask::resetSilenceTimer();
-            } else if (silenceMs > (uint32_t)g_config.silence_timeout_sec * 1000) {
+            // スピーカー再生直後の600msクールダウン (スピーカー残響・マイク回り込みによる誤検知を遮断)
+            if (millis() - s_speechEndTimestamp > 600) {
+                if (AudioTask::isVoiceDetected()) {
+                    Serial.println("[Voice] Follow-up speech detected. Returning to LISTENING...");
+                    g_state = STATE_LISTENING;
+                    g_avatar.setEmotion(EMOTION_NORMAL);
+                    if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_NORMAL);
+                    AudioTask::startRecording();
+                    AudioTask::resetSilenceTimer();
+                    break;
+                }
+            }
+            if (silenceMs > (uint32_t)g_config.silence_timeout_sec * 1000) {
                 Serial.println("[Timeout] Silence limit reached. Ending session.");
                 g_avatar.setEmotion(EMOTION_SLEEP);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SLEEP);

@@ -18,6 +18,14 @@ public:
     static bool isPlaying();
     static void stopPlayback();
 
+    // 録音機能 (STT / Gemini Multimodal用)
+    static void startRecording();
+    static void stopRecording();
+    static bool isRecording();
+    static const int16_t* getRecordedPCM(size_t* outSamples);
+    static size_t getRecordedBytes();
+    static bool hasMeaningfulSpeech();
+
 private:
     static void audioWorkerTask(void* pvParameters);
 };

@@ -112,6 +112,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           />
         </div>
 
+        {/* Gemini Model */}
+        <div className="flex flex-col gap-1.5 bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+          <label className="text-neutral-400 flex items-center gap-1.5 font-medium">
+            <Bot className="w-3.5 h-3.5 text-cyan-400" />
+            Gemini 対話モデル (STT / 会話生成)
+          </label>
+          <select
+            value={geminiModel}
+            onChange={(e) => setGeminiModel(e.target.value)}
+            className="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-neutral-100 font-mono focus:outline-none focus:border-cyan-500 cursor-pointer"
+          >
+            <option value="gemini-3.5-flash">gemini-3.5-flash (推奨 / 高速・高クォータ)</option>
+            <option value="gemini-flash-latest">gemini-flash-latest (安定本番モデル)</option>
+            <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (超高速・軽量)</option>
+            <option value="gemini-3.8-flash">gemini-3.8-flash (Preview / 1日20回制限注意)</option>
+          </select>
+        </div>
+
         {/* TTS Voice */}
         <div className="flex flex-col gap-1.5 bg-neutral-950 p-3 rounded-xl border border-neutral-800">
           <label className="text-neutral-400 flex items-center gap-1.5 font-medium">

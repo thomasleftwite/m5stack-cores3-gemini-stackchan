@@ -5,7 +5,7 @@
 
 struct AppConfig {
     String gemini_api_key = "";
-    String gemini_model = "gemini-3.8-flash";
+    String gemini_model = "gemini-3.5-flash";
     String tts_voice = "Kore";
     String wake_word = "スタックちゃん";
     int silence_timeout_sec = 6;

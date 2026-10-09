@@ -37,7 +37,7 @@ export default function HomePage() {
 
   // Settings
   const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [geminiModel, setGeminiModel] = useState("gemini-3.8-flash");
+  const [geminiModel, setGeminiModel] = useState("gemini-3.5-flash");
   const [ttsVoice, setTtsVoice] = useState("Kore");
   const [wakeWord, setWakeWord] = useState("スタックちゃん");
   const [silenceTimeoutSec, setSilenceTimeoutSec] = useState(6);
