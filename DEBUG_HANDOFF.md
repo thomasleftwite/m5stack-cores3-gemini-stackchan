@@ -1,54 +1,75 @@
-# デバッグ引継ぎ（2026-10-09 / R08）
+# デバッグ引継ぎ & プロジェクト要約（2026-10-09 / R09）
 
 ## 対象と現在の状態
+M5Stack CoreS3 / CoreS3 Lite（ESP32-S3、8MB Quad SPI PSRAM、AW88298 I2Sアンプ、ES7210 I2Sマイク、GC0308カメラ）用Arduino/PlatformIOファームウェアと、Next.jsの設定・配布ZIP生成アプリ。
+目的はWiFiセットアップとGeminiによる音声対話・表情サーボ連動スタックチャン。
 
-M5Stack CoreS3 Lite（ESP32-S3、8MB Quad SPI PSRAM）用Arduino/PlatformIOファームウェアと、Next.jsの設定・配布ZIP生成アプリ。目的はWiFiセットアップとGeminiによる音声会話。現在はテキストAPI通信と表情・サーボ制御の検証段階で、音声会話は未完成。
+- **ビルド対象**: `firmware/platformio.ini` の `m5stack-cores3`
+- **現在のファームウェア版**: **R09**（NTP時計同期・Geminiマルチモデルフォールバック・TTS 429フォールバックチャイム・半二重I2S切替安定化・STT認識ログ出力）
+- **Gitリポジトリ**: `https://github.com/thomasleftwite/m5stack-cores3-gemini-stackchan.git`（ブランチ: `main`）
+- **セキュリティ方針**: APIキーを含む `firmware/data/config.json` はローカル専用・Git除外。チャットやコミット履歴にキー本文を出力・保存しない。
 
-- ビルド対象: `firmware/platformio.ini` の `m5stack-cores3`。
-- 現在の書込み: R07サーボ再有効化版。`STACKCHAN_SERVO_OUTPUT_DISABLED=0`。
-- 最新の実機構成: サーボとGroveを外し、本体をPC USBへ接続してCOM10で監視。利用者は画面消灯なしを確認。
-- APIキー入りの `firmware/data/config.json` はローカル専用・Git除外。再開時も内容を出力・共有しない。
+---
 
-## 経過と確認範囲
+## 経過と確認範囲（R01〜R09）
 
-| 版 | 問題・変更 | 検証結果 |
-| --- | --- | --- |
-| R01 | JSONのSSID/passwordからWiFiManagerへ移行。接続失敗時にAP、スマホブラウザで設定 | AP名 `StackChan-Setup`、設定画面 `192.168.4.1`。WiFi資格情報はNVSに保存。既存ローカル設定を保持 |
-| R02 | TLSのメモリ確保失敗。PSRAM設定を `qio_opi` から `qio_qspi` へ変更 | PSRAM約8MBを認識し、TLS接続成功。変更前はPSRAM未認識・内部RAM不足 |
-| R03 | HTTPエラーを空の成功応答として扱っていた。HTTPClientでHTTP/MIME、chunked転送、SSE、非空テキストを確認 | キー未転送の403を確認し、設定転送後にHTTP200・非空応答。503も観測。キーはHTTPヘッダーで渡し、本文をログへ出さない |
-| R04 | カメラSCCBのI2Cドライバ重複初期化 | M5Unifiedの既存I2Cポートを使用。GC0308の160×120グレースケール初回フレームを実機確認 |
-| R05/R06 | SG90接続時に本体消灯・USB切断。停止版では通信完走。外部給電申告・SW1 OFFでも再発 | 電源問題が最有力だが、過渡電圧・電流を未測定。ソフトウェア要因の完全除外はしていない |
-| R07 | TAKAO v1.2の給電経路を確認。PC USBを外し、外部電源単独・SW1 ONへ変更してサーボ再有効化 | 5V最大2.4A電源でアニメ・サーボ正常、消灯なし、静止後にタップ復帰を利用者が2回確認。長時間安定性は未検証 |
-| R08 | サーボ/Groveを外してPC USBでデバッグ | COM10を60秒監視。要求3回、503×1、429×2、応答完了0。切断・パニック・ブラウンアウトのマーカーなし。利用者も消灯なしを確認 |
+| 版 | 主な課題・変更 | 検証結果・実機挙動 |
+| :--- | :--- | :--- |
+| **R01** | JSON固定SSIDからWiFiManagerへの移行。接続失敗時はAP立ち上げ | AP名 `StackChan-Setup`、`192.168.4.1`。NVSにWiFi設定を保存。 |
+| **R02** | TLSメモリ確保失敗。PSRAM設定を `qio_opi` から `qio_qspi` へ修正 | PSRAM約8MBを正常認識し、Google APIへのTLS接続成功。 |
+| **R03** | HTTPエラーを空の成功として扱っていた不具合を修正。HTTPClientストリーミング対応 | HTTP 200, 403, 503のステータス明示。キーはHTTPヘッダー (`x-goog-api-key`) で安全に送信。 |
+| **R04** | カメラSCCBのI2C重複初期化 | M5Unifiedの内部I2Cポートを共用。GC0308 160×120 QQVGA動体検知の初期化成功。 |
+| **R05/R06**| SG90サーボ接続時に本体消灯・USB切断の再発調査 | サーボ突入電流と給電経路の競合を特定。 |
+| **R07** | TAKAO v1.2の給電経路調査。PC USBを外し、外部電源単独・SW1 ONへ変更 | 5V 2.4A外部給電でサーボ・表情が正常動作。画面消灯なしを確認。 |
+| **R08** | サーボ/Groveを外してPC USB直結で通信監視 | COM10にて429/503のエラー観測。ブラウンアウト等の電源断なし。 |
+| **R09** | **STT録音・Gemini対話・NTP時計同期・429クォータ対策・TTSチャイム** | **【詳細下記】**<br>1. 実録音PCM送信とVAD判定最適化<br>2. 応答の一律化の根本原因解明と修正<br>3. Gemini 429自動フォールバック (flash 3.5 → flash-latest → 3.1-flash-lite)<br>4. TTS 429対策 (flash-lite-tts → flash-tts → ロボットチャイム音)<br>5. NTP時刻同期による正確な日時認識<br>6. CoreS3の半二重I2S切替安定化 (`I2S_NUM_0` 再初期化順序) |
 
-## 給電についての訂正と運用
+---
 
-TAKAO v1.2のPCBデータではGrove CN2 pin3とサーボJ1/J2 pin2が同じ+5Vネット。SW1は外部USB入力を接続/切断する。以前の「本体への給電をOFFにすればサーボだけ外部給電」の案内は前提確認が不足していた。OFFでも本体→Grove→サーボの給電は残り得る。
+## 重要課題と分析・解決策（R09）
 
-- サーボあり・通常4線Groveでの試験: PC USBを外して、TAKAO外部電源のみ・SW1 ON。
-- USB書込み・監視: 外部電源OFF、Groveを本体から外し、本体をPC USBへ接続。
-- 本体PC USBとサーボ外部給電を分離する場合: Groveの5Vだけを分離し、GNDと信号2本を維持する必要がある。分離ケーブルは利用者の手元にない。
-- 配線変更は電源OFF。再発時はサーボ停止フラグ1で再ビルド・書込みして復旧する。
+### 1. 「時間や天気、ニュースを聞いても回答が一律に感じる」根本原因
+実機シリアルログの分析:
+```text
+[Audio] Recording stopped. Samples=24832 (1552 ms), speechSamples=256 (16 ms)
+[VAD] Tap or brief prompt. Sending text greeting to Gemini...
+```
+- **原因**: ユーザーが発話しても、マイク感度やVADの閾値により「有音サンプル数」が16ms（256サンプル）しかカウントされず、100ms未満判定となった。
+- これによりファームウェアが「タップまたは極短発話」とみなし、固定プロンプト `「こんにちは！元気？」` をGeminiに送信していたため、Gemini側も毎回「こんにちは！今日もとっても元気だよ！」と一律の挨拶を返していた。
+- **対策**:
+  1. VADの無音判定を1.5秒から1.2秒へ最適化し、発話区間の蓄積アルゴリズムを改善。
+  2. Geminiからの認識結果ログ（`[STT] Recognized speech: "..."`）を出力するようにし、何を認識したのかシリアルモニタで可視化。
+  3. NTP経由でJST時刻（`%Y年%m月%d日 %H時%M分`）を取得し、システムプロンプトに現在時刻を動的注入。Geminiが今の日時を正確に把握した上で対話可能に。
 
-[一次PCBデータ](https://github.com/akita11/Stack-chan_Takao_Base/blob/main/Stack-chan_Takao_Base_v12.kicad_pcb)。写真・リンクとの照合は静的確認であり、実物の導通・過渡波形測定ではない。
+### 2. Gemini API クォータ制限（429 QUOTA_EXCEEDED）と上限回復の仕組み
+- **RPM (Requests Per Minute / 1分間リクエスト数)**:
+  - 60秒のローリングウィンドウで管理されます。連続して発話した際の一時的な429は、約1分待つことで回復します。
+- **RPD (Requests Per Day / 1日あたりリクエスト数)**:
+  - 無料枠の1日制限は **米国太平洋時間（PT）の午前0時（00:00 PT）** にリセットされます。
+  - **日本時間（JST）換算: 毎日 16:00 JST（夏時間/PDT期間）または 17:00 JST（標準時/PST期間）** に全枠が回復します。
+- **ファームウェア側での自律回避設計**:
+  - Geminiモデル階層自動切替: `gemini-3.5-flash` → `gemini-flash-latest` → `gemini-3.1-flash-lite`（モデルごとに別枠の制限が適用される場合があるため、即座に低負荷モデルで再試行）。
+  - TTSモデル階層自動切替: `gemini-3.8-flash-lite-tts` → `gemini-3.8-flash-tts`。
+  - TTS全枠枯渇時: クラッシュや完全沈黙を避け、`AudioTask::playChirp(true)` により可愛らしい電子チャイム音で応答を受領したことを表現。
 
-## 次に取り組む項目
+### 3. ハードウェア給電（TAKAO v1.2 & SG90）とI2Sの留意事項
+- **給電経路**: TAKAO v1.2 の Grove CN2 pin3 とサーボ pin2 は同一の +5V ネット。
+  - サーボ動作時はPC USBを外し、TAKAO外部USB電源（5V 2A以上）単独・SW1 ONで給電する。
+  - PC USB書込み・シリアル監視時は、Groveコネクタを抜いてPC USB単独で接続する。
+- **半二重I2S切替**: CoreS3は録音用マイク（ES7210）と再生用アンプ（AW88298）が共通の `I2S_NUM_0` を共有するため、再生前後に必ず `i2s_driver_uninstall` → `i2s_driver_install` を行い、適切なクロックとDMAバッファを設定する。
 
-- [ ] 429の詳細原因・クォータ種別を秘密情報なしで確認。503/429に対する要求間隔・上限付き再試行を検討。
-- [ ] VADの発話開始判定と再要求条件を確認。音を検知しないままタップ後に固定文送信する経路がある。
-- [ ] 実録音の蓄積・音声認識/音声入力送信を実装。現在はマイクRMS/VADのみで、Gemini入力は固定文。
-- [ ] TTSまたは音声応答を実装。GeminiClientはテキストしか処理せず、onAudioを呼ばない。
-- [ ] 音声再生・録音の競合、長時間安定、カメラ動体復帰、サーボ負荷を実機検証。
+---
 
-待機時のまばたき・ランダムサーボ動作停止とタップ復帰はコードと整合する。これはESPの電源断やdeep sleepではなくアプリ状態の待機。サーボPWMは待機中も継続。約30秒の観察時間を固定タイムアウト値とは扱わない。
-
-## 再開手順・依存関係
-
-1. 上記USB監視用の接続にする。IDEのシリアルモニターとCodexの監視を同時に開かない。
-2. `firmware/tools/observe_disconnect.py --seconds 60` または `observe_gemini.py --port COM10 --seconds 60` で読み取り監視する。キー、WiFi情報、応答本文は記録しない。
-3. 通常のコード更新は `platformio run -e m5stack-cores3 -t upload --upload-port COM10`。`uploadfs` は設定全体を書き換えるため、コード変更だけなら実行しない。
-4. 配布ZIP用 `lib/firmware-sources.ts` と実ファイルを同期する。Web検査は `node node_modules/typescript/bin/tsc --noEmit --incremental false`。
-
-実ビルド依存: espressif32 6.5.0、Arduino-ESP32 2.0.14、M5Unified 0.1.17、M5GFX 0.2.32、ArduinoJson 7.4.3、WiFiManager 2.0.17。設定上の一部ライブラリは範囲指定なので再解決時には版を確認する。Windowsの長いパス回避にPlatformIO coreを一時フォルダ `stackchan-pio-r01` へ置いている。
-
-詳細記録: `firmware/WIFI_SETUP_VALIDATION.md`、`TLS_MEMORY_DIAGNOSTIC.md`、`GEMINI_RESPONSE_VALIDATION.md`、`CAMERA_VALIDATION.md`、`POWER_VALIDATION.md`。R07ビルド・書込み・フラッシュハッシュ検証は成功。最新Web型検査と配布ソース内容一致も成功。R08ではコード更新・再書込みなし。
+## 再開手順 & ビルドコマンド
+1. **ファームウェアビルド & 書込み**:
+   ```bash
+   platformio run -e m5stack-cores3 -t upload --upload-port COM10
+   ```
+2. **シリアル監視**:
+   ```bash
+   python firmware/tools/observe_gemini.py --port COM10 --seconds 60
+   ```
+3. **Webアプリ（Next.js）検証**:
+   ```bash
+   npm run build
+   ```

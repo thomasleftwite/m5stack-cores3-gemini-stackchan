@@ -113,7 +113,20 @@ static void setupWiFi() {
         while (true) delay(1000);
     }
     WiFi.setAutoReconnect(true);
+    configTime(9 * 3600, 0, "ntp.nict.jp", "pool.ntp.org", "time.google.com");
+    Serial.println("[Time] NTP time sync configured for JST (UTC+9).");
     Serial.println("[WiFi] Setup complete.");
+}
+
+static String getFormattedJSTTime() {
+    time_t now = time(nullptr);
+    struct tm timeinfo;
+    if (localtime_r(&now, &timeinfo) && timeinfo.tm_year > (2020 - 1900)) {
+        char buf[64];
+        strftime(buf, sizeof(buf), "%Y年%m月%d日 %H時%M分", &timeinfo);
+        return String(buf);
+    }
+    return "";
 }
 
 // 1. アバター描画 & サーボ補間タスク (Core 1 / 60FPS)
@@ -264,19 +277,26 @@ void loop() {
         case STATE_LISTENING:
             if (AudioTask::isVoiceDetected()) {
                 AudioTask::resetSilenceTimer();
-            } else if (silenceMs > 1500) {
-                // 発話終端検出
+            } else if (silenceMs > 1200) {
+                // 発話終端検出 (1.2秒の無音で思考状態へ移行)
                 AudioTask::stopRecording();
                 g_state = STATE_THINKING;
                 g_avatar.setEmotion(EMOTION_THINKING);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_THINKING);
+
+                String jstTime = getFormattedJSTTime();
+                if (!jstTime.isEmpty()) {
+                    GeminiClient::setCurrentDateTime(jstTime);
+                }
 
                 bool requestOk = false;
                 size_t samples = 0;
                 const int16_t* pcm = AudioTask::getRecordedPCM(&samples);
 
                 if (AudioTask::hasMeaningfulSpeech() && pcm && samples > 1600) {
-                    Serial.println("[VAD] Meaningful user speech recorded. Sending audio to Gemini...");
+                    Serial.printf("[VAD] User speech captured (%u samples, %u ms). Sending audio to Gemini...\n",
+                                  static_cast<unsigned>(samples),
+                                  static_cast<unsigned>(samples * 1000 / 16000));
                     requestOk = GeminiClient::sendUserAudioDialogue(
                         pcm,
                         samples,
@@ -290,7 +310,7 @@ void loop() {
                         }
                     );
                 } else {
-                    Serial.println("[VAD] Tap or brief prompt. Sending text greeting to Gemini...");
+                    Serial.println("[VAD] Tap or very short prompt. Sending greeting...");
                     requestOk = GeminiClient::sendUserPromptStream(
                         "こんにちは！元気？",
                         [](AvatarEmotion emo) {
@@ -304,7 +324,7 @@ void loop() {
                     );
                 }
 
-                if (requestOk && AudioTask::isPlaying()) {
+                if ((requestOk || AudioTask::isPlaying()) && AudioTask::isPlaying()) {
                     g_state = STATE_SPEAKING;
                 } else if (!requestOk) {
                     g_avatar.setEmotion(EMOTION_SAD);
