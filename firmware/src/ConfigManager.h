@@ -5,7 +5,7 @@
 
 struct AppConfig {
     String gemini_api_key = "";
-    String gemini_model = "gemini-3.1-flash-lite";
+    String gemini_model = "gemini-flash-latest";
     String tts_voice = "Kore";
     String wake_word = "スタックちゃん";
     int silence_timeout_sec = 6;
@@ -87,9 +87,9 @@ public:
         }
 
         cfg.gemini_api_key = doc["gemini_api_key"] | cfg.gemini_api_key;
-        cfg.gemini_model = doc["gemini_model"] | "gemini-3.1-flash-lite";
-        if (cfg.gemini_model == "gemini-3.5-flash" || cfg.gemini_model == "gemini-3.8-flash") {
-            cfg.gemini_model = "gemini-3.1-flash-lite";
+        cfg.gemini_model = doc["gemini_model"] | "gemini-flash-latest";
+        if (cfg.gemini_model.isEmpty() || cfg.gemini_model == "gemini-2.5-flash" || cfg.gemini_model == "gemini-2.5-flash-lite" || cfg.gemini_model == "gemini-2.0-flash" || cfg.gemini_model == "gemini-1.5-flash") {
+            cfg.gemini_model = "gemini-flash-latest";
         }
         cfg.tts_voice = doc["tts_voice"] | "Kore";
         cfg.wake_word = doc["wake_word"] | "スタックちゃん";

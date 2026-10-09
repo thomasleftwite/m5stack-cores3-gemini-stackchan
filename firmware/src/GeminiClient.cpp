@@ -359,7 +359,7 @@ void reportApiError(const String& body) {
 }
 
 String GeminiClient::s_apiKey = "";
-String GeminiClient::s_model = "gemini-2.5-flash";
+String GeminiClient::s_model = "gemini-flash-latest";
 String GeminiClient::s_voice = "Kore";
 String GeminiClient::s_currentDateTime = "";
 
@@ -367,7 +367,12 @@ const char* GEMINI_HOST = "generativelanguage.googleapis.com";
 
 void GeminiClient::init(const String& apiKey, const String& model, const String& voice) {
     s_apiKey = apiKey;
-    s_model = (model.isEmpty() || model == "gemini-3.5-flash" || model == "gemini-3.8-flash" || model == "gemini-3.1-flash-lite") ? "gemini-2.5-flash" : model;
+    // 古い廃止モデル(gemini-2.5-flash / gemini-2.0-flash / gemini-1.5-flashなど)や未指定は gemini-flash-latest に正規化
+    if (model.isEmpty() || model == "gemini-2.5-flash" || model == "gemini-2.5-flash-lite" || model == "gemini-2.0-flash" || model == "gemini-1.5-flash") {
+        s_model = "gemini-flash-latest";
+    } else {
+        s_model = model;
+    }
     s_voice = voice.isEmpty() ? "Kore" : voice;
 }
 
@@ -431,8 +436,8 @@ bool GeminiClient::sendUserPromptStream(
     }
 
     String modelToUse = s_model;
-    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash" || modelToUse == "gemini-3.1-flash-lite") {
-        modelToUse = "gemini-2.5-flash";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-2.5-flash" || modelToUse == "gemini-2.5-flash-lite" || modelToUse == "gemini-2.0-flash" || modelToUse == "gemini-1.5-flash") {
+        modelToUse = "gemini-flash-latest";
     }
 
     WiFiClientSecure client;
@@ -643,8 +648,8 @@ bool GeminiClient::sendUserAudioDialogue(
     heap_caps_free(b64Audio); // Base64バッファは即時解放
 
     String modelToUse = s_model;
-    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash" || modelToUse == "gemini-3.1-flash-lite") {
-        modelToUse = "gemini-2.5-flash";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-2.5-flash" || modelToUse == "gemini-2.5-flash-lite" || modelToUse == "gemini-2.0-flash" || modelToUse == "gemini-1.5-flash") {
+        modelToUse = "gemini-flash-latest";
     }
 
     Serial.printf("[Gemini] Sending %u bytes of audio (%u ms) to %s...\n",
@@ -671,10 +676,10 @@ bool GeminiClient::sendUserAudioDialogue(
     int status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
     Serial.printf("[Gemini] Audio dialogue HTTP status=%d (model=%s)\n", status, modelToUse.c_str());
 
-    // 429または503の場合は、ユーザー音声を破棄せず別のモデルへ自動リトライ
-    const char* fallbackModels[] = {"gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"};
+    // 429(レート制限), 503(一時的高負荷), 404(非対応モデル)の場合は、ユーザー音声を破棄せず別のアクティブモデルへ自動リトライ
+    const char* fallbackModels[] = {"gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"};
     for (const char* fbModel : fallbackModels) {
-        if ((status == 429 || status == 503) && modelToUse != fbModel) {
+        if ((status == 429 || status == 503 || status == 404) && modelToUse != fbModel) {
             http.end();
             Serial.printf("[Gemini] Retrying audio dialogue with fallback model: %s...\n", fbModel);
             modelToUse = fbModel;

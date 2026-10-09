@@ -284,7 +284,7 @@ board_build.filesystem = littlefs`,
 
 struct AppConfig {
     String gemini_api_key = "";
-    String gemini_model = "gemini-3.5-flash";
+    String gemini_model = "gemini-flash-latest";
     String tts_voice = "Kore";
     String wake_word = "スタックちゃん";
     int silence_timeout_sec = 6;
@@ -366,7 +366,10 @@ public:
         }
 
         cfg.gemini_api_key = doc["gemini_api_key"] | cfg.gemini_api_key;
-        cfg.gemini_model = doc["gemini_model"] | "gemini-3.8-flash";
+        cfg.gemini_model = doc["gemini_model"] | "gemini-flash-latest";
+        if (cfg.gemini_model.isEmpty() || cfg.gemini_model == "gemini-2.5-flash" || cfg.gemini_model == "gemini-2.5-flash-lite" || cfg.gemini_model == "gemini-2.0-flash" || cfg.gemini_model == "gemini-1.5-flash") {
+            cfg.gemini_model = "gemini-flash-latest";
+        }
         cfg.tts_voice = doc["tts_voice"] | "Kore";
         cfg.wake_word = doc["wake_word"] | "スタックちゃん";
         cfg.silence_timeout_sec = doc["silence_timeout_sec"] | 6;
@@ -861,6 +864,13 @@ enum AudioMode {
     AUDIO_MODE_PLAYBACK
 };
 
+enum SoundCue {
+    SOUND_CUE_WAKE_MOTION = 0, // 動体検知で起動（静かな短音 660Hz 1音）
+    SOUND_CUE_WAKE_WORD,       // ウェイクワード/タップで入力待ち（軽快な上昇 2音 880Hz -> 1320Hz）
+    SOUND_CUE_REC_COMPLETE,    // 入力録音完了（柔らかい受理音 1046Hz 1音）
+    SOUND_CUE_ERROR            // AIデータ送受信失敗・クォータ制限（困惑の下降 3音 880Hz -> 660Hz -> 440Hz）
+};
+
 class AudioTask {
 public:
     static void init(uint8_t micGain, uint8_t spkVolume);
@@ -879,8 +889,11 @@ public:
 
     // 再生キューへのPCMデータ供給
     static void enqueueAudioChunk(const uint8_t* pcmData, size_t length);
+    static void finishAudioStream();
     static bool isPlaying();
     static void stopPlayback();
+    static void playChirp(bool happy = true);
+    static void playSoundCue(SoundCue cue);
 
     // 録音機能 (STT / Gemini Multimodal用)
     static void startRecording();
@@ -920,13 +933,18 @@ static uint8_t s_micGain = 80;
 static volatile AudioMode s_requestedMode = AUDIO_MODE_MIC;
 static AudioMode s_currentMode = AUDIO_MODE_UNINIT;
 
-#define AUDIO_BUF_SIZE (96 * 1024) // 96KB PSRAM RingBuffer for 24kHz speaker playback
+#define AUDIO_BUF_SIZE (128 * 1024) // 128KB PSRAM RingBuffer for 24kHz speaker playback
 #define RECORD_MAX_SAMPLES (16000 * 4) // 4秒間 @ 16kHz mono = 64,000 samples = 128KB
 
 static int16_t* s_recordBuffer = nullptr;
 static volatile size_t s_recordSampleCount = 0;
 static volatile bool s_isRecording = false;
 static volatile size_t s_speechSampleCount = 0;
+
+static volatile bool s_streamFinished = false;
+static volatile size_t s_bufferedBytes = 0;
+static volatile bool s_playbackStarted = false;
+static float s_noiseFloor = 0.006f;
 
 void AudioTask::init(uint8_t micGain, uint8_t spkVolume) {
     s_micGain = micGain;
@@ -1003,13 +1021,24 @@ void AudioTask::resetSilenceTimer() {
 
 void AudioTask::enqueueAudioChunk(const uint8_t* pcmData, size_t length) {
     if (s_audioRingBuf && pcmData && length > 0) {
+        // 16-bit PCM word境界 (2バイト) にアライン
+        size_t safeLen = length & ~1;
+        if (safeLen == 0) return;
+
         // スピーカーモードへの切替を要求
         if (s_requestedMode != AUDIO_MODE_PLAYBACK) {
             s_requestedMode = AUDIO_MODE_PLAYBACK;
         }
         s_isPlaying = true;
-        xRingbufferSend(s_audioRingBuf, pcmData, length, pdMS_TO_TICKS(150));
+        BaseType_t res = xRingbufferSend(s_audioRingBuf, pcmData, safeLen, pdMS_TO_TICKS(150));
+        if (res == pdTRUE) {
+            s_bufferedBytes += safeLen;
+        }
     }
+}
+
+void AudioTask::finishAudioStream() {
+    s_streamFinished = true;
 }
 
 bool AudioTask::isPlaying() {
@@ -1019,6 +1048,11 @@ bool AudioTask::isPlaying() {
 void AudioTask::stopPlayback() {
     s_requestedMode = AUDIO_MODE_MIC;
     s_isPlaying = false;
+    s_playbackStarted = false;
+    s_streamFinished = false;
+    s_bufferedBytes = 0;
+    M5.Speaker.stop();
+
     // リングバッファに残っている未再生PCMをフラッシュ
     if (s_audioRingBuf) {
         size_t dummySize = 0;
@@ -1027,6 +1061,92 @@ void AudioTask::stopPlayback() {
             vRingbufferReturnItem(s_audioRingBuf, dummy);
         }
     }
+}
+
+void AudioTask::playChirp(bool happy) {
+    playSoundCue(happy ? SOUND_CUE_WAKE_WORD : SOUND_CUE_ERROR);
+}
+
+void AudioTask::playSoundCue(SoundCue cue) {
+    if (!s_audioRingBuf) return;
+    const uint32_t sampleRate = 24000;
+
+    int toneCount = 0;
+    float freqs[4] = {0};
+    size_t durations[4] = {0};
+    float amplitude = 10000.0f;
+
+    switch (cue) {
+        case SOUND_CUE_WAKE_MOTION:
+            // 1. 動体検知で起動: 静かで優しい短音 (660Hz, 80ms)
+            toneCount = 1;
+            freqs[0] = 660.0f;
+            durations[0] = 80;
+            amplitude = 7500.0f;
+            break;
+
+        case SOUND_CUE_WAKE_WORD:
+            // 2. ウェイクワード/タップで入力待ち: 軽快な上昇 2音 (880Hz -> 1320Hz, 各70ms)
+            toneCount = 2;
+            freqs[0] = 880.0f;
+            durations[0] = 70;
+            freqs[1] = 1320.0f;
+            durations[1] = 90;
+            amplitude = 11000.0f;
+            break;
+
+        case SOUND_CUE_REC_COMPLETE:
+            // 3. 入力録音完了: クリアで短い受理音 (1046Hz [C6], 90ms)
+            toneCount = 1;
+            freqs[0] = 1046.5f;
+            durations[0] = 90;
+            amplitude = 9500.0f;
+            break;
+
+        case SOUND_CUE_ERROR:
+        default:
+            // 4. AIデータ送受信失敗・Gemini連携失敗: 困惑を伝える下降 3音 (880Hz -> 660Hz -> 440Hz, 各80ms)
+            toneCount = 3;
+            freqs[0] = 880.0f;
+            durations[0] = 75;
+            freqs[1] = 660.0f;
+            durations[1] = 75;
+            freqs[2] = 440.0f;
+            durations[2] = 120;
+            amplitude = 12000.0f;
+            break;
+    }
+
+    int16_t chirpPcm[256];
+    float phase = 0.0f;
+
+    for (int t = 0; t < toneCount; t++) {
+        float freq = freqs[t];
+        size_t totalSamples = (sampleRate * durations[t]) / 1000;
+        size_t generated = 0;
+
+        while (generated < totalSamples) {
+            size_t batch = totalSamples - generated;
+            if (batch > 256) batch = 256;
+
+            for (size_t i = 0; i < batch; i++) {
+                // クリックノイズ防止エンベロープ (フェードイン & フェードアウト)
+                float env = 1.0f;
+                float progress = (float)(generated + i) / (float)totalSamples;
+                if (progress < 0.12f) env = progress / 0.12f;
+                else if (progress > 0.85f) env = (1.0f - progress) / 0.15f;
+
+                float sampleVal = sinf(phase) * amplitude * env;
+                chirpPcm[i] = static_cast<int16_t>(sampleVal);
+                phase += (2.0f * 3.14159265f * freq) / static_cast<float>(sampleRate);
+                if (phase > 2.0f * 3.14159265f) phase -= 2.0f * 3.14159265f;
+            }
+
+            enqueueAudioChunk(reinterpret_cast<const uint8_t*>(chirpPcm), batch * sizeof(int16_t));
+            generated += batch;
+        }
+    }
+    finishAudioStream();
 }
 
 void AudioTask::startRecording() {
@@ -1040,7 +1160,7 @@ void AudioTask::startRecording() {
 
 void AudioTask::stopRecording() {
     s_isRecording = false;
-    Serial.printf("[Audio] Recording stopped. Samples=%u (%u ms), speechSamples=%u (%u ms)\n",
+    Serial.printf("[Audio] Recording stopped. Samples=%u (%u ms), speechSamples=%u (%u ms)\\n",
                   static_cast<unsigned>(s_recordSampleCount),
                   static_cast<unsigned>(s_recordSampleCount * 1000 / 16000),
                   static_cast<unsigned>(s_speechSampleCount),
@@ -1061,17 +1181,16 @@ size_t AudioTask::getRecordedBytes() {
 }
 
 bool AudioTask::hasMeaningfulSpeech() {
-    // 250ms以上の実発話 (音量閾値超え) が蓄積されていれば有意な発話とみなす (16000 * 25 / 100 = 4000 samples)
-    return s_speechSampleCount >= 4000;
+    // 768サンプル (~48ms) 以上の有声区間が検知されたか、または総録音時間が0.5秒 (8000サンプル) を超えている場合はユーザー発話ありと判定
+    return (s_speechSampleCount >= 768) || (s_recordSampleCount >= 8000);
 }
 
 void AudioTask::audioWorkerTask(void* pvParameters) {
     int16_t micBuffer[256];
 
-    // 8面ローテーションバッファ (各512サンプル = 1024バイト = 約21.3ms @ 24kHz)
-    // M5.Speaker.playRaw はポインタをDMAキューに保持するため、
-    // 8面 (~170ms) のローテーションバッファでDMA転送完了前のデータ上書きを確実に防止
-    static int16_t spkBuffers[8][512];
+    // 4面ローテーションバッファ (各1024サンプル = 2048バイト = 約42.6ms @ 24kHz)
+    // 適切なチャンクサイズでDMAキューに供給することで、ネットワークジッターや途切れノイズを完全に防止
+    static int16_t spkBuffers[4][1024];
     static size_t spkBufIdx = 0;
     static uint32_t lastChunkMillis = 0;
 
@@ -1082,12 +1201,13 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 Serial.println("[Audio] Switching I2S: MIC (ES7210) -> SPEAKER (AW88298)...");
                 if (s_currentMode == AUDIO_MODE_MIC) {
                     M5.Mic.end();
-                    vTaskDelay(pdMS_TO_TICKS(20));
+                    vTaskDelay(pdMS_TO_TICKS(30));
                 }
                 M5.Speaker.begin();
                 M5.Speaker.setVolume(s_spkVolume);
                 M5.Speaker.setChannelVolume(0, s_spkVolume);
                 s_currentMode = AUDIO_MODE_PLAYBACK;
+                s_playbackStarted = false;
                 lastChunkMillis = millis();
                 Serial.println("[Audio] I2S switched to SPEAKER mode successfully.");
             } else if (s_requestedMode == AUDIO_MODE_MIC) {
@@ -1095,14 +1215,18 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 if (s_currentMode == AUDIO_MODE_PLAYBACK) {
                     M5.Speaker.stop();
                     while (M5.Speaker.isPlaying()) {
-                        vTaskDelay(pdMS_TO_TICKS(5));
+                        vTaskDelay(pdMS_TO_TICKS(10));
                     }
-                    M5.Speaker.end();
                     vTaskDelay(pdMS_TO_TICKS(20));
+                    M5.Speaker.end();
+                    vTaskDelay(pdMS_TO_TICKS(40));
                 }
                 M5.Mic.begin();
                 s_currentMode = AUDIO_MODE_MIC;
                 s_isPlaying = false;
+                s_playbackStarted = false;
+                s_streamFinished = false;
+                s_bufferedBytes = 0;
                 s_liveRMS = 0.0f;
                 s_voiceActive = false;
                 s_lastVoiceTime = millis();
@@ -1120,8 +1244,15 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 float rms = sqrtf((float)sumSquare / 256.0f);
                 s_liveRMS = rms / 8000.0f;
 
-                // 人間の通常発話 (30-50cm) に適したVAD閾値 (RMS ~360)
-                if (s_liveRMS > 0.045f) {
+                // 環境ノイズフロアの適応型トラッキング (定常騒音を学習して適応)
+                s_noiseFloor = s_noiseFloor * 0.98f + s_liveRMS * 0.02f;
+                if (s_noiseFloor < 0.003f) s_noiseFloor = 0.003f;
+                if (s_noiseFloor > 0.035f) s_noiseFloor = 0.035f;
+
+                // 通常対話距離 (30-60cm) に最適化した動的VAD閾値 (RMS約80〜120相当)
+                float voiceThreshold = fmaxf(0.010f, s_noiseFloor * 1.5f);
+
+                if (s_liveRMS > voiceThreshold) {
                     s_voiceActive = true;
                     s_lastVoiceTime = millis();
                     if (s_isRecording) {
@@ -1143,6 +1274,16 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
             vTaskDelay(pdMS_TO_TICKS(5));
         }
         else if (s_currentMode == AUDIO_MODE_PLAYBACK) {
+            // ジッターバッファ: 再生開始前に16KB (~340ms) の蓄積またはストリーム完了を待機し、途切れを根絶
+            if (!s_playbackStarted) {
+                if (s_bufferedBytes >= 16384 || s_streamFinished) {
+                    s_playbackStarted = true;
+                } else {
+                    vTaskDelay(pdMS_TO_TICKS(5));
+                    continue;
+                }
+            }
+
             // M5Unified Speaker Channel 0 の空き状態確認
             // (0: 停止中, 1: 再生中で空きキューあり, 2: キュー満杯)
             size_t playingState = M5.Speaker.isPlaying(0);
@@ -1153,10 +1294,12 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 void* item = xRingbufferReceiveUpTo(s_audioRingBuf, &itemSize, pdMS_TO_TICKS(5), sizeof(spkBuffers[0]));
                 if (item && itemSize > 0) {
                     size_t samples = itemSize / sizeof(int16_t);
-                    if (samples > 512) samples = 512;
+                    if (samples > 1024) samples = 1024;
 
                     memcpy(spkBuffers[spkBufIdx], item, samples * sizeof(int16_t));
                     vRingbufferReturnItem(s_audioRingBuf, item);
+                    if (s_bufferedBytes >= itemSize) s_bufferedBytes -= itemSize;
+                    else s_bufferedBytes = 0;
 
                     // リップシンク用RMS計算 (TTS音声に合わせてアバターの口を同期)
                     int64_t sumSquare = 0;
@@ -1166,9 +1309,9 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                     float rms = sqrtf((float)sumSquare / (float)samples);
                     s_liveRMS = rms / 6000.0f;
 
-                    // Channel 0 で24kHz mono 16bit PCM再生
+                    // Channel 0 で24kHz mono 16bit PCM再生 (1024サンプル = ~42.6ms)
                     M5.Speaker.playRaw(spkBuffers[spkBufIdx], samples, 24000, false, 1, 0);
-                    spkBufIdx = (spkBufIdx + 1) % 8;
+                    spkBufIdx = (spkBufIdx + 1) % 4;
 
                     s_isPlaying = true;
                     lastChunkMillis = millis();
@@ -1176,12 +1319,13 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 }
             }
 
-            // リングバッファが空で、かつスピーカー再生キューも空になった場合
-            if (!chunkFed && playingState == 0) {
-                // 最後のPCMチャンク投入から250ms以上経過していたら再生完了
-                if (s_isPlaying && (millis() - lastChunkMillis > 250)) {
+            // ストリーム送信が完了し、リングバッファとスピーカーDMAキューの両方が空になったら再生完了
+            if (s_playbackStarted && s_streamFinished && s_bufferedBytes == 0 && playingState == 0 && !chunkFed) {
+                if (millis() - lastChunkMillis > 200) {
                     s_isPlaying = false;
                     s_liveRMS = 0.0f;
+                    s_playbackStarted = false;
+                    s_streamFinished = false;
                     Serial.println("[Audio] Playback completed. Returning to MIC mode.");
                     s_requestedMode = AUDIO_MODE_MIC;
                 }
@@ -1781,7 +1925,7 @@ void reportApiError(const String& body) {
 }
 
 String GeminiClient::s_apiKey = "";
-String GeminiClient::s_model = "gemini-2.5-flash";
+String GeminiClient::s_model = "gemini-flash-latest";
 String GeminiClient::s_voice = "Kore";
 String GeminiClient::s_currentDateTime = "";
 
@@ -1789,7 +1933,12 @@ const char* GEMINI_HOST = "generativelanguage.googleapis.com";
 
 void GeminiClient::init(const String& apiKey, const String& model, const String& voice) {
     s_apiKey = apiKey;
-    s_model = (model.isEmpty() || model == "gemini-3.5-flash" || model == "gemini-3.8-flash" || model == "gemini-3.1-flash-lite") ? "gemini-2.5-flash" : model;
+    // 古い廃止モデル(gemini-2.5-flash / gemini-2.0-flash / gemini-1.5-flashなど)や未指定は gemini-flash-latest に正規化
+    if (model.isEmpty() || model == "gemini-2.5-flash" || model == "gemini-2.5-flash-lite" || model == "gemini-2.0-flash" || model == "gemini-1.5-flash") {
+        s_model = "gemini-flash-latest";
+    } else {
+        s_model = model;
+    }
     s_voice = voice.isEmpty() ? "Kore" : voice;
 }
 
@@ -1853,8 +2002,8 @@ bool GeminiClient::sendUserPromptStream(
     }
 
     String modelToUse = s_model;
-    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash" || modelToUse == "gemini-3.1-flash-lite") {
-        modelToUse = "gemini-2.5-flash";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-2.5-flash" || modelToUse == "gemini-2.5-flash-lite" || modelToUse == "gemini-2.0-flash" || modelToUse == "gemini-1.5-flash") {
+        modelToUse = "gemini-flash-latest";
     }
 
     WiFiClientSecure client;
@@ -2065,8 +2214,8 @@ bool GeminiClient::sendUserAudioDialogue(
     heap_caps_free(b64Audio); // Base64バッファは即時解放
 
     String modelToUse = s_model;
-    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash" || modelToUse == "gemini-3.1-flash-lite") {
-        modelToUse = "gemini-2.5-flash";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-2.5-flash" || modelToUse == "gemini-2.5-flash-lite" || modelToUse == "gemini-2.0-flash" || modelToUse == "gemini-1.5-flash") {
+        modelToUse = "gemini-flash-latest";
     }
 
     Serial.printf("[Gemini] Sending %u bytes of audio (%u ms) to %s...\\n",
@@ -2093,10 +2242,10 @@ bool GeminiClient::sendUserAudioDialogue(
     int status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
     Serial.printf("[Gemini] Audio dialogue HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
 
-    // 429または503の場合は、ユーザー音声を破棄せず別のモデルへ自動リトライ
-    const char* fallbackModels[] = {"gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"};
+    // 429(レート制限), 503(一時的高負荷), 404(非対応モデル)の場合は、ユーザー音声を破棄せず別のアクティブモデルへ自動リトライ
+    const char* fallbackModels[] = {"gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"};
     for (const char* fbModel : fallbackModels) {
-        if ((status == 429 || status == 503) && modelToUse != fbModel) {
+        if ((status == 429 || status == 503 || status == 404) && modelToUse != fbModel) {
             http.end();
             Serial.printf("[Gemini] Retrying audio dialogue with fallback model: %s...\\n", fbModel);
             modelToUse = fbModel;
@@ -2423,6 +2572,8 @@ void motionTaskCode(void* pv) {
                 }
                 g_state = STATE_STANDBY_WAIT_KEYWORD;
                 AudioTask::resetSilenceTimer();
+                // 動体検知起動キュー音 (静かな短音 660Hz)
+                AudioTask::playSoundCue(SOUND_CUE_WAKE_MOTION);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(100)); // 10FPSでチェック
@@ -2506,6 +2657,7 @@ void loop() {
             g_state = STATE_LISTENING;
             g_avatar.setEmotion(EMOTION_HAPPY);
             if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_HAPPY);
+            AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
             AudioTask::startRecording();
             AudioTask::resetSilenceTimer();
         }
@@ -2521,6 +2673,7 @@ void loop() {
                 g_avatar.setEmotion(EMOTION_HAPPY);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_HAPPY);
                 g_state = STATE_LISTENING;
+                AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
                 AudioTask::startRecording();
                 AudioTask::resetSilenceTimer();
             } else if (silenceMs > 8000) {
@@ -2535,8 +2688,9 @@ void loop() {
             if (AudioTask::isVoiceDetected()) {
                 AudioTask::resetSilenceTimer();
             } else if (silenceMs > 1200) {
-                // 発話終端検出 (1.2秒の無音で思考状態へ移行)
+                // 発話終端検出 (1.2秒の無音で録音完了音を鳴らし、思考状態へ移行)
                 AudioTask::stopRecording();
+                AudioTask::playSoundCue(SOUND_CUE_REC_COMPLETE);
                 g_state = STATE_THINKING;
                 g_avatar.setEmotion(EMOTION_THINKING);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_THINKING);
@@ -2588,8 +2742,8 @@ void loop() {
                     s_lastRequestSuccess = false;
                     g_avatar.setEmotion(EMOTION_SAD);
                     if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SAD);
-                    Serial.println("[State] Request failed or quota exceeded. Playing error chime...");
-                    AudioTask::playChirp(false); // 困惑・エラーを表現する下降トーン
+                    Serial.println("[State] Request failed or quota exceeded. Playing error sound cue...");
+                    AudioTask::playSoundCue(SOUND_CUE_ERROR); // 困惑・エラーを表現する下降トーン
                     g_state = STATE_SPEAKING;
                 } else {
                     s_lastRequestSuccess = true;
@@ -2622,6 +2776,7 @@ void loop() {
                     g_state = STATE_LISTENING;
                     g_avatar.setEmotion(EMOTION_NORMAL);
                     if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_NORMAL);
+                    AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
                     AudioTask::startRecording();
                     AudioTask::resetSilenceTimer();
                     break;

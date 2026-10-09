@@ -167,6 +167,8 @@ void motionTaskCode(void* pv) {
                 }
                 g_state = STATE_STANDBY_WAIT_KEYWORD;
                 AudioTask::resetSilenceTimer();
+                // 動体検知起動キュー音 (静かな短音 660Hz)
+                AudioTask::playSoundCue(SOUND_CUE_WAKE_MOTION);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(100)); // 10FPSでチェック
@@ -250,6 +252,7 @@ void loop() {
             g_state = STATE_LISTENING;
             g_avatar.setEmotion(EMOTION_HAPPY);
             if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_HAPPY);
+            AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
             AudioTask::startRecording();
             AudioTask::resetSilenceTimer();
         }
@@ -265,6 +268,7 @@ void loop() {
                 g_avatar.setEmotion(EMOTION_HAPPY);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_HAPPY);
                 g_state = STATE_LISTENING;
+                AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
                 AudioTask::startRecording();
                 AudioTask::resetSilenceTimer();
             } else if (silenceMs > 8000) {
@@ -279,8 +283,9 @@ void loop() {
             if (AudioTask::isVoiceDetected()) {
                 AudioTask::resetSilenceTimer();
             } else if (silenceMs > 1200) {
-                // 発話終端検出 (1.2秒の無音で思考状態へ移行)
+                // 発話終端検出 (1.2秒の無音で録音完了音を鳴らし、思考状態へ移行)
                 AudioTask::stopRecording();
+                AudioTask::playSoundCue(SOUND_CUE_REC_COMPLETE);
                 g_state = STATE_THINKING;
                 g_avatar.setEmotion(EMOTION_THINKING);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_THINKING);
@@ -332,8 +337,8 @@ void loop() {
                     s_lastRequestSuccess = false;
                     g_avatar.setEmotion(EMOTION_SAD);
                     if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SAD);
-                    Serial.println("[State] Request failed or quota exceeded. Playing error chime...");
-                    AudioTask::playChirp(false); // 困惑・エラーを表現する下降トーン
+                    Serial.println("[State] Request failed or quota exceeded. Playing error sound cue...");
+                    AudioTask::playSoundCue(SOUND_CUE_ERROR); // 困惑・エラーを表現する下降トーン
                     g_state = STATE_SPEAKING;
                 } else {
                     s_lastRequestSuccess = true;
@@ -366,6 +371,7 @@ void loop() {
                     g_state = STATE_LISTENING;
                     g_avatar.setEmotion(EMOTION_NORMAL);
                     if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_NORMAL);
+                    AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
                     AudioTask::startRecording();
                     AudioTask::resetSilenceTimer();
                     break;

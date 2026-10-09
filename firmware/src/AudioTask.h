@@ -8,6 +8,13 @@ enum AudioMode {
     AUDIO_MODE_PLAYBACK
 };
 
+enum SoundCue {
+    SOUND_CUE_WAKE_MOTION = 0, // 動体検知で起動（静かな短音 660Hz 1音）
+    SOUND_CUE_WAKE_WORD,       // ウェイクワード/タップで入力待ち（軽快な上昇 2音 880Hz -> 1320Hz）
+    SOUND_CUE_REC_COMPLETE,    // 入力録音完了（柔らかい受理音 1046Hz 1音）
+    SOUND_CUE_ERROR            // AIデータ送受信失敗・クォータ制限（困惑の下降 3音 880Hz -> 660Hz -> 440Hz）
+};
+
 class AudioTask {
 public:
     static void init(uint8_t micGain, uint8_t spkVolume);
@@ -30,6 +37,7 @@ public:
     static bool isPlaying();
     static void stopPlayback();
     static void playChirp(bool happy = true);
+    static void playSoundCue(SoundCue cue);
 
     // 録音機能 (STT / Gemini Multimodal用)
     static void startRecording();

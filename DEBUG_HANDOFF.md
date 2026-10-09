@@ -69,7 +69,17 @@ M5Stack CoreS3 / CoreS3 Lite（ESP32-S3、8MB Quad SPI PSRAM、AW88298 I2Sアン
   3. 標準モデルを実在する最新高速モデル `gemini-2.5-flash` に統一し、フォールバックチェーン（`gemini-2.0-flash` → `gemini-1.5-flash` → `gemini-flash-latest`）を整備。
   4. 429検出時にシリアルへ回復目安時間を診断表示。
 
-### 5. ハードウェア給電（TAKAO v1.2 & SG90）とI2Sの留意事項
+### 5. モデル非推奨(404 NOT_FOUND)の修正とアクティブモデルチェーン（2026-10-09 / R12）
+- **原因判明**:
+  - `gemini-2.5-flash` および `gemini-2.5-flash-lite` はGoogle Gemini APIにおいて新規利用終了（Deprecated / 404 NOT_FOUND: `"This model models/gemini-2.5-flash is no longer available to new users."`）となっていた。
+- **恒久対策**:
+  - デフォルトモデルおよびフォールバックモデルを現在アクティブに提供されている最新モデルへ移行：
+    - 主力モデル: `gemini-flash-latest` (HTTP 200 OK 検証済)
+    - 自動フォールバックチェーン: `gemini-3.1-flash-lite` -> `gemini-3.8-flash` -> `gemini-3.5-flash` -> `gemini-flash-latest`
+    - `ConfigManager.h` および `GeminiClient.cpp` 内で、万一設定ファイルや古い引数に `gemini-2.5-flash` などの廃止モデルが残っていても `gemini-flash-latest` へ自動正規化する安全ガードを追加。
+  - TTS音声合成は検証済の `gemini-3.8-flash-lite-tts` (フォールバック: `gemini-3.8-flash-tts`) を維持。
+
+### 6. ハードウェア給電（TAKAO v1.2 & SG90）とI2Sの留意事項
 - **給電経路**: TAKAO v1.2 の Grove CN2 pin3 とサーボ pin2 は同一の +5V ネット。
   - サーボ動作時はPC USBを外し、TAKAO外部USB電源（5V 2A以上）単独・SW1 ONで給電する。
   - PC USB書込み・シリアル監視時は、Groveコネクタを抜いてPC USB単独で接続する。

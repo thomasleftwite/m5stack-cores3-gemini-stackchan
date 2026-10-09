@@ -149,18 +149,65 @@ void AudioTask::stopPlayback() {
 }
 
 void AudioTask::playChirp(bool happy) {
+    playSoundCue(happy ? SOUND_CUE_WAKE_WORD : SOUND_CUE_ERROR);
+}
+
+void AudioTask::playSoundCue(SoundCue cue) {
     if (!s_audioRingBuf) return;
     const uint32_t sampleRate = 24000;
-    // 3音の軽快なメロディ (ハッピー: 880Hz -> 1320Hz -> 1760Hz, 困惑: 880Hz -> 660Hz -> 440Hz)
-    const float freqs[3] = {happy ? 880.0f : 880.0f, happy ? 1320.0f : 660.0f, happy ? 1760.0f : 440.0f};
-    const size_t toneDurationMs[3] = {70, 80, 110};
+
+    int toneCount = 0;
+    float freqs[4] = {0};
+    size_t durations[4] = {0};
+    float amplitude = 10000.0f;
+
+    switch (cue) {
+        case SOUND_CUE_WAKE_MOTION:
+            // 1. 動体検知で起動: 静かで優しい短音 (660Hz, 80ms)
+            toneCount = 1;
+            freqs[0] = 660.0f;
+            durations[0] = 80;
+            amplitude = 7500.0f;
+            break;
+
+        case SOUND_CUE_WAKE_WORD:
+            // 2. ウェイクワード/タップで入力待ち: 軽快な上昇 2音 (880Hz -> 1320Hz, 各70ms)
+            toneCount = 2;
+            freqs[0] = 880.0f;
+            durations[0] = 70;
+            freqs[1] = 1320.0f;
+            durations[1] = 90;
+            amplitude = 11000.0f;
+            break;
+
+        case SOUND_CUE_REC_COMPLETE:
+            // 3. 入力録音完了: クリアで短い受理音 (1046Hz [C6], 90ms)
+            toneCount = 1;
+            freqs[0] = 1046.5f;
+            durations[0] = 90;
+            amplitude = 9500.0f;
+            break;
+
+        case SOUND_CUE_ERROR:
+        default:
+            // 4. AIデータ送受信失敗・Gemini連携失敗: 困惑を伝える下降 3音 (880Hz -> 660Hz -> 440Hz, 各80ms)
+            toneCount = 3;
+            freqs[0] = 880.0f;
+            durations[0] = 75;
+            freqs[1] = 660.0f;
+            durations[1] = 75;
+            freqs[2] = 440.0f;
+            durations[2] = 120;
+            amplitude = 12000.0f;
+            break;
+    }
 
     int16_t chirpPcm[256];
     float phase = 0.0f;
 
-    for (int t = 0; t < 3; t++) {
+    for (int t = 0; t < toneCount; t++) {
         float freq = freqs[t];
-        size_t totalSamples = (sampleRate * toneDurationMs[t]) / 1000;
+        size_t totalSamples = (sampleRate * durations[t]) / 1000;
         size_t generated = 0;
 
         while (generated < totalSamples) {
@@ -168,13 +215,13 @@ void AudioTask::playChirp(bool happy) {
             if (batch > 256) batch = 256;
 
             for (size_t i = 0; i < batch; i++) {
-                // クリックノイズ防止エンベロープ
+                // クリックノイズ防止エンベロープ (フェードイン & フェードアウト)
                 float env = 1.0f;
                 float progress = (float)(generated + i) / (float)totalSamples;
                 if (progress < 0.12f) env = progress / 0.12f;
                 else if (progress > 0.85f) env = (1.0f - progress) / 0.15f;
 
-                float sampleVal = sinf(phase) * 11000.0f * env;
+                float sampleVal = sinf(phase) * amplitude * env;
                 chirpPcm[i] = static_cast<int16_t>(sampleVal);
                 phase += (2.0f * 3.14159265f * freq) / static_cast<float>(sampleRate);
                 if (phase > 2.0f * 3.14159265f) phase -= 2.0f * 3.14159265f;
