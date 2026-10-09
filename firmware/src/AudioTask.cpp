@@ -18,13 +18,18 @@ static uint8_t s_micGain = 80;
 static volatile AudioMode s_requestedMode = AUDIO_MODE_MIC;
 static AudioMode s_currentMode = AUDIO_MODE_UNINIT;
 
-#define AUDIO_BUF_SIZE (96 * 1024) // 96KB PSRAM RingBuffer for 24kHz speaker playback
+#define AUDIO_BUF_SIZE (128 * 1024) // 128KB PSRAM RingBuffer for 24kHz speaker playback
 #define RECORD_MAX_SAMPLES (16000 * 4) // 4秒間 @ 16kHz mono = 64,000 samples = 128KB
 
 static int16_t* s_recordBuffer = nullptr;
 static volatile size_t s_recordSampleCount = 0;
 static volatile bool s_isRecording = false;
 static volatile size_t s_speechSampleCount = 0;
+
+static volatile bool s_streamFinished = false;
+static volatile size_t s_bufferedBytes = 0;
+static volatile bool s_playbackStarted = false;
+static float s_noiseFloor = 0.006f;
 
 void AudioTask::init(uint8_t micGain, uint8_t spkVolume) {
     s_micGain = micGain;
@@ -101,13 +106,24 @@ void AudioTask::resetSilenceTimer() {
 
 void AudioTask::enqueueAudioChunk(const uint8_t* pcmData, size_t length) {
     if (s_audioRingBuf && pcmData && length > 0) {
+        // 16-bit PCM word境界 (2バイト) にアライン
+        size_t safeLen = length & ~1;
+        if (safeLen == 0) return;
+
         // スピーカーモードへの切替を要求
         if (s_requestedMode != AUDIO_MODE_PLAYBACK) {
             s_requestedMode = AUDIO_MODE_PLAYBACK;
         }
         s_isPlaying = true;
-        xRingbufferSend(s_audioRingBuf, pcmData, length, pdMS_TO_TICKS(150));
+        BaseType_t res = xRingbufferSend(s_audioRingBuf, pcmData, safeLen, pdMS_TO_TICKS(150));
+        if (res == pdTRUE) {
+            s_bufferedBytes += safeLen;
+        }
     }
+}
+
+void AudioTask::finishAudioStream() {
+    s_streamFinished = true;
 }
 
 bool AudioTask::isPlaying() {
@@ -117,6 +133,11 @@ bool AudioTask::isPlaying() {
 void AudioTask::stopPlayback() {
     s_requestedMode = AUDIO_MODE_MIC;
     s_isPlaying = false;
+    s_playbackStarted = false;
+    s_streamFinished = false;
+    s_bufferedBytes = 0;
+    M5.Speaker.stop();
+
     // リングバッファに残っている未再生PCMをフラッシュ
     if (s_audioRingBuf) {
         size_t dummySize = 0;
@@ -125,6 +146,45 @@ void AudioTask::stopPlayback() {
             vRingbufferReturnItem(s_audioRingBuf, dummy);
         }
     }
+}
+
+void AudioTask::playChirp(bool happy) {
+    if (!s_audioRingBuf) return;
+    const uint32_t sampleRate = 24000;
+    // 3音の軽快なメロディ (ハッピー: 880Hz -> 1320Hz -> 1760Hz, 困惑: 880Hz -> 660Hz -> 440Hz)
+    const float freqs[3] = {happy ? 880.0f : 880.0f, happy ? 1320.0f : 660.0f, happy ? 1760.0f : 440.0f};
+    const size_t toneDurationMs[3] = {70, 80, 110};
+
+    int16_t chirpPcm[256];
+    float phase = 0.0f;
+
+    for (int t = 0; t < 3; t++) {
+        float freq = freqs[t];
+        size_t totalSamples = (sampleRate * toneDurationMs[t]) / 1000;
+        size_t generated = 0;
+
+        while (generated < totalSamples) {
+            size_t batch = totalSamples - generated;
+            if (batch > 256) batch = 256;
+
+            for (size_t i = 0; i < batch; i++) {
+                // クリックノイズ防止エンベロープ
+                float env = 1.0f;
+                float progress = (float)(generated + i) / (float)totalSamples;
+                if (progress < 0.12f) env = progress / 0.12f;
+                else if (progress > 0.85f) env = (1.0f - progress) / 0.15f;
+
+                float sampleVal = sinf(phase) * 11000.0f * env;
+                chirpPcm[i] = static_cast<int16_t>(sampleVal);
+                phase += (2.0f * 3.14159265f * freq) / static_cast<float>(sampleRate);
+                if (phase > 2.0f * 3.14159265f) phase -= 2.0f * 3.14159265f;
+            }
+
+            enqueueAudioChunk(reinterpret_cast<const uint8_t*>(chirpPcm), batch * sizeof(int16_t));
+            generated += batch;
+        }
+    }
+    finishAudioStream();
 }
 
 void AudioTask::startRecording() {
@@ -159,17 +219,16 @@ size_t AudioTask::getRecordedBytes() {
 }
 
 bool AudioTask::hasMeaningfulSpeech() {
-    // 250ms以上の実発話 (音量閾値超え) が蓄積されていれば有意な発話とみなす (16000 * 25 / 100 = 4000 samples)
-    return s_speechSampleCount >= 4000;
+    // 768サンプル (~48ms) 以上の有声区間が検知されたか、または総録音時間が0.5秒 (8000サンプル) を超えている場合はユーザー発話ありと判定
+    return (s_speechSampleCount >= 768) || (s_recordSampleCount >= 8000);
 }
 
 void AudioTask::audioWorkerTask(void* pvParameters) {
     int16_t micBuffer[256];
 
-    // 8面ローテーションバッファ (各512サンプル = 1024バイト = 約21.3ms @ 24kHz)
-    // M5.Speaker.playRaw はポインタをDMAキューに保持するため、
-    // 8面 (~170ms) のローテーションバッファでDMA転送完了前のデータ上書きを確実に防止
-    static int16_t spkBuffers[8][512];
+    // 4面ローテーションバッファ (各1024サンプル = 2048バイト = 約42.6ms @ 24kHz)
+    // 適切なチャンクサイズでDMAキューに供給することで、ネットワークジッターや途切れノイズを完全に防止
+    static int16_t spkBuffers[4][1024];
     static size_t spkBufIdx = 0;
     static uint32_t lastChunkMillis = 0;
 
@@ -180,12 +239,13 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 Serial.println("[Audio] Switching I2S: MIC (ES7210) -> SPEAKER (AW88298)...");
                 if (s_currentMode == AUDIO_MODE_MIC) {
                     M5.Mic.end();
-                    vTaskDelay(pdMS_TO_TICKS(20));
+                    vTaskDelay(pdMS_TO_TICKS(30));
                 }
                 M5.Speaker.begin();
                 M5.Speaker.setVolume(s_spkVolume);
                 M5.Speaker.setChannelVolume(0, s_spkVolume);
                 s_currentMode = AUDIO_MODE_PLAYBACK;
+                s_playbackStarted = false;
                 lastChunkMillis = millis();
                 Serial.println("[Audio] I2S switched to SPEAKER mode successfully.");
             } else if (s_requestedMode == AUDIO_MODE_MIC) {
@@ -193,14 +253,18 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 if (s_currentMode == AUDIO_MODE_PLAYBACK) {
                     M5.Speaker.stop();
                     while (M5.Speaker.isPlaying()) {
-                        vTaskDelay(pdMS_TO_TICKS(5));
+                        vTaskDelay(pdMS_TO_TICKS(10));
                     }
-                    M5.Speaker.end();
                     vTaskDelay(pdMS_TO_TICKS(20));
+                    M5.Speaker.end();
+                    vTaskDelay(pdMS_TO_TICKS(40));
                 }
                 M5.Mic.begin();
                 s_currentMode = AUDIO_MODE_MIC;
                 s_isPlaying = false;
+                s_playbackStarted = false;
+                s_streamFinished = false;
+                s_bufferedBytes = 0;
                 s_liveRMS = 0.0f;
                 s_voiceActive = false;
                 s_lastVoiceTime = millis();
@@ -218,8 +282,15 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 float rms = sqrtf((float)sumSquare / 256.0f);
                 s_liveRMS = rms / 8000.0f;
 
-                // 人間の通常発話 (30-50cm) に適したVAD閾値 (RMS ~360)
-                if (s_liveRMS > 0.045f) {
+                // 環境ノイズフロアの適応型トラッキング (定常騒音を学習して適応)
+                s_noiseFloor = s_noiseFloor * 0.98f + s_liveRMS * 0.02f;
+                if (s_noiseFloor < 0.003f) s_noiseFloor = 0.003f;
+                if (s_noiseFloor > 0.035f) s_noiseFloor = 0.035f;
+
+                // 通常対話距離 (30-60cm) に最適化した動的VAD閾値 (RMS約80〜120相当)
+                float voiceThreshold = fmaxf(0.010f, s_noiseFloor * 1.5f);
+
+                if (s_liveRMS > voiceThreshold) {
                     s_voiceActive = true;
                     s_lastVoiceTime = millis();
                     if (s_isRecording) {
@@ -241,6 +312,16 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
             vTaskDelay(pdMS_TO_TICKS(5));
         }
         else if (s_currentMode == AUDIO_MODE_PLAYBACK) {
+            // ジッターバッファ: 再生開始前に16KB (~340ms) の蓄積またはストリーム完了を待機し、途切れを根絶
+            if (!s_playbackStarted) {
+                if (s_bufferedBytes >= 16384 || s_streamFinished) {
+                    s_playbackStarted = true;
+                } else {
+                    vTaskDelay(pdMS_TO_TICKS(5));
+                    continue;
+                }
+            }
+
             // M5Unified Speaker Channel 0 の空き状態確認
             // (0: 停止中, 1: 再生中で空きキューあり, 2: キュー満杯)
             size_t playingState = M5.Speaker.isPlaying(0);
@@ -251,10 +332,12 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 void* item = xRingbufferReceiveUpTo(s_audioRingBuf, &itemSize, pdMS_TO_TICKS(5), sizeof(spkBuffers[0]));
                 if (item && itemSize > 0) {
                     size_t samples = itemSize / sizeof(int16_t);
-                    if (samples > 512) samples = 512;
+                    if (samples > 1024) samples = 1024;
 
                     memcpy(spkBuffers[spkBufIdx], item, samples * sizeof(int16_t));
                     vRingbufferReturnItem(s_audioRingBuf, item);
+                    if (s_bufferedBytes >= itemSize) s_bufferedBytes -= itemSize;
+                    else s_bufferedBytes = 0;
 
                     // リップシンク用RMS計算 (TTS音声に合わせてアバターの口を同期)
                     int64_t sumSquare = 0;
@@ -264,9 +347,9 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                     float rms = sqrtf((float)sumSquare / (float)samples);
                     s_liveRMS = rms / 6000.0f;
 
-                    // Channel 0 で24kHz mono 16bit PCM再生
+                    // Channel 0 で24kHz mono 16bit PCM再生 (1024サンプル = ~42.6ms)
                     M5.Speaker.playRaw(spkBuffers[spkBufIdx], samples, 24000, false, 1, 0);
-                    spkBufIdx = (spkBufIdx + 1) % 8;
+                    spkBufIdx = (spkBufIdx + 1) % 4;
 
                     s_isPlaying = true;
                     lastChunkMillis = millis();
@@ -274,12 +357,13 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 }
             }
 
-            // リングバッファが空で、かつスピーカー再生キューも空になった場合
-            if (!chunkFed && playingState == 0) {
-                // 最後のPCMチャンク投入から250ms以上経過していたら再生完了
-                if (s_isPlaying && (millis() - lastChunkMillis > 250)) {
+            // ストリーム送信が完了し、リングバッファとスピーカーDMAキューの両方が空になったら再生完了
+            if (s_playbackStarted && s_streamFinished && s_bufferedBytes == 0 && playingState == 0 && !chunkFed) {
+                if (millis() - lastChunkMillis > 200) {
                     s_isPlaying = false;
                     s_liveRMS = 0.0f;
+                    s_playbackStarted = false;
+                    s_streamFinished = false;
                     Serial.println("[Audio] Playback completed. Returning to MIC mode.");
                     s_requestedMode = AUDIO_MODE_MIC;
                 }

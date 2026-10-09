@@ -26,8 +26,10 @@ public:
 
     // 再生キューへのPCMデータ供給
     static void enqueueAudioChunk(const uint8_t* pcmData, size_t length);
+    static void finishAudioStream();
     static bool isPlaying();
     static void stopPlayback();
+    static void playChirp(bool happy = true);
 
     // 録音機能 (STT / Gemini Multimodal用)
     static void startRecording();
