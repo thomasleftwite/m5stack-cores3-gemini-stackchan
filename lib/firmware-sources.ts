@@ -383,7 +383,8 @@ public:
         cfg.servo_pan_center = doc["servo_pan_center"] | 90;
         cfg.servo_tilt_center = doc["servo_tilt_center"] | 90;
 
-        Serial.println("[Config] Loaded successfully from LittleFS");
+        Serial.printf("[Config] Loaded from LittleFS: model=%s, voice=%s, wake_word=%s, spk_vol=%u\\n",
+                      cfg.gemini_model.c_str(), cfg.tts_voice.c_str(), cfg.wake_word.c_str(), cfg.spk_volume);
         return true;
     }
 };
@@ -1940,6 +1941,7 @@ void GeminiClient::init(const String& apiKey, const String& model, const String&
         s_model = model;
     }
     s_voice = voice.isEmpty() ? "Kore" : voice;
+    Serial.printf("[Gemini] Client initialized with model=%s, voice=%s\\n", s_model.c_str(), s_voice.c_str());
 }
 
 void GeminiClient::setCurrentDateTime(const String& dateTimeStr) {
@@ -2243,8 +2245,11 @@ bool GeminiClient::sendUserAudioDialogue(
     Serial.printf("[Gemini] Audio dialogue HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
 
     // 429(レート制限), 503(一時的高負荷), 404(非対応モデル)の場合は、ユーザー音声を破棄せず別のアクティブモデルへ自動リトライ
-    const char* fallbackModels[] = {"gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"};
+    const char* fallbackModels[] = {"gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash"};
     for (const char* fbModel : fallbackModels) {
+        if (status == HTTP_CODE_OK) {
+            break;
+        }
         if ((status == 429 || status == 503 || status == 404) && modelToUse != fbModel) {
             http.end();
             Serial.printf("[Gemini] Retrying audio dialogue with fallback model: %s...\\n", fbModel);

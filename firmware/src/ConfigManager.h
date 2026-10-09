@@ -104,7 +104,8 @@ public:
         cfg.servo_pan_center = doc["servo_pan_center"] | 90;
         cfg.servo_tilt_center = doc["servo_tilt_center"] | 90;
 
-        Serial.println("[Config] Loaded successfully from LittleFS");
+        Serial.printf("[Config] Loaded from LittleFS: model=%s, voice=%s, wake_word=%s, spk_vol=%u\n",
+                      cfg.gemini_model.c_str(), cfg.tts_voice.c_str(), cfg.wake_word.c_str(), cfg.spk_volume);
         return true;
     }
 };
