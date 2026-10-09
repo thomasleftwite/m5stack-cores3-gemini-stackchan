@@ -161,11 +161,13 @@ void motionTaskCode(void* pv) {
 }
 
 void setup() {
-    // 1. M5Unifiedの初期化 (SpeakerとMicの競合を防ぐクリーン初期化)
+    // 1. M5Unifiedの初期化 (CoreS3 ハーフデュプレックスI2S対応)
+    // CoreS3はマイク(ES7210)とスピーカー(AW88298)が単一のI2Sバスを共有するため、
+    // M5.begin() ではI2Sを自動起動せず、AudioTask ワーカタスクが排他制御で直列管理する
     auto cfg = M5.config();
     cfg.serial_baudrate = 115200;
-    cfg.internal_spk = true;
-    cfg.internal_mic = true;
+    cfg.internal_spk = false;
+    cfg.internal_mic = false;
     M5.begin(cfg);
 
     Serial.println("=== M5Stack CoreS3 Lite Gemini Stack-chan ===");
@@ -220,9 +222,15 @@ void loop() {
     M5.update();
     uint32_t silenceMs = AudioTask::getSilenceDurationMs();
 
-    // 画面タッチでも強制ウェイクアップ可能
+    // 画面タッチ制御 (ウェイクアップ または 発話中断)
     if (M5.BtnA.wasClicked() || M5.Touch.getCount() > 0) {
-        if (g_state == STATE_SLEEP || g_state == STATE_STANDBY_WAIT_KEYWORD) {
+        if (g_state == STATE_SPEAKING) {
+            Serial.println("[Touch] Screen tapped during speech! Stopping playback...");
+            AudioTask::stopPlayback();
+            g_state = STATE_WAIT_FOLLOWUP;
+            AudioTask::resetSilenceTimer();
+            s_speechEndTimestamp = millis();
+        } else if (g_state == STATE_SLEEP || g_state == STATE_STANDBY_WAIT_KEYWORD) {
             Serial.println("[Touch] Screen tapped! Waking up to LISTENING...");
             g_state = STATE_LISTENING;
             g_avatar.setEmotion(EMOTION_HAPPY);

@@ -117,7 +117,7 @@ private:
 class TTSResponseSink : public Stream {
 public:
     explicit TTSResponseSink(AudioChunkCallback onAudio)
-        : onAudio_(onAudio), inBase64Data_(false), state_(0), totalPcmBytes_(0),
+        : onAudio_(onAudio), inBase64Data_(false), state_(0), matchStage_(0), totalPcmBytes_(0),
           decoder_([this](const uint8_t* pcm, size_t len) {
               // 512バイトごとにまとめてコールバック
               for (size_t i = 0; i < len; ++i) {
@@ -132,17 +132,37 @@ public:
 
     size_t write(uint8_t byte) override { return write(&byte, 1); }
     size_t write(const uint8_t* data, size_t size) override {
-        static const char KEY[] = "\"data\": \"";
         for (size_t i = 0; i < size; ++i) {
             char c = static_cast<char>(data[i]);
             if (!inBase64Data_) {
-                if (c == KEY[state_]) {
-                    state_++;
-                    if (state_ == strlen(KEY)) {
-                        inBase64Data_ = true;
+                // "data" キーを検索
+                static const char KEY[] = "\"data\"";
+                if (matchStage_ == 0) {
+                    if (c == KEY[state_]) {
+                        state_++;
+                        if (state_ == strlen(KEY)) {
+                            matchStage_ = 1; // "data" 一致、次は ':' を待つ
+                            state_ = 0;
+                        }
+                    } else {
+                        state_ = (c == KEY[0]) ? 1 : 0;
                     }
-                } else {
-                    state_ = (c == KEY[0]) ? 1 : 0;
+                } else if (matchStage_ == 1) {
+                    if (c == ':') {
+                        matchStage_ = 2; // ':' 検出、次は '"' を待つ
+                    } else if (c != ' ' && c != '\t' && c != '\r' && c != '\n') {
+                        matchStage_ = 0;
+                        state_ = 0;
+                    }
+                } else if (matchStage_ == 2) {
+                    if (c == '"') {
+                        inBase64Data_ = true; // Base64音声データ開始
+                        matchStage_ = 0;
+                        state_ = 0;
+                    } else if (c != ' ' && c != '\t' && c != '\r' && c != '\n') {
+                        matchStage_ = 0;
+                        state_ = 0;
+                    }
                 }
             } else {
                 if (c == '"') {
@@ -171,6 +191,7 @@ private:
     AudioChunkCallback onAudio_;
     bool inBase64Data_;
     size_t state_;
+    uint8_t matchStage_ = 0;
     size_t totalPcmBytes_;
     uint8_t pcmBuffer_[512];
     size_t pcmBufIdx_ = 0;
