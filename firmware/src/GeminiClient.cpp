@@ -1,4 +1,5 @@
 #include "GeminiClient.h"
+#include "AudioTask.h"
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <esp_heap_caps.h>
@@ -51,7 +52,7 @@ public:
     typedef std::function<void(const uint8_t* pcm, size_t len)> ChunkCallback;
 
     explicit Base64StreamDecoder(ChunkCallback cb)
-        : cb_(cb), bufIdx_(0), totalDecodedBytes_(0) {}
+        : cb_(cb), bufIdx_(0) {}
 
     void write(char c) {
         int val = decodeChar(c);

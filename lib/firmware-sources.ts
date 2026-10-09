@@ -1421,6 +1421,7 @@ private:
     description: "Gemini 3.8 Flash & TTS 直接ストリーミング通信・低遅延パーサー実装",
     language: "cpp",
     content: `#include "GeminiClient.h"
+#include "AudioTask.h"
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <esp_heap_caps.h>
@@ -1473,7 +1474,7 @@ public:
     typedef std::function<void(const uint8_t* pcm, size_t len)> ChunkCallback;
 
     explicit Base64StreamDecoder(ChunkCallback cb)
-        : cb_(cb), bufIdx_(0), totalDecodedBytes_(0) {}
+        : cb_(cb), bufIdx_(0) {}
 
     void write(char c) {
         int val = decodeChar(c);
@@ -1506,7 +1507,6 @@ private:
     ChunkCallback cb_;
     uint8_t buf_[4];
     uint8_t bufIdx_;
-    size_t totalDecodedBytes_;
 
     static int decodeChar(char c) {
         if (c >= 'A' && c <= 'Z') return c - 'A';
@@ -1523,14 +1523,86 @@ private:
         if (outBytes >= 2) raw[1] = ((buf_[1] & 0x0f) << 4) | ((buf_[2] >> 2) & 0x0f);
         if (outBytes >= 3) raw[2] = ((buf_[2] & 0x03) << 6) | (buf_[3] & 0x3f);
 
-        for (size_t i = 0; i < outBytes; ++i) {
-            totalDecodedBytes_++;
-            // 最初の44バイトはWAV RIFFヘッダーなのでスキップ
-            if (totalDecodedBytes_ > 44) {
-                if (cb_) {
-                    cb_(&raw[i], 1);
+        if (cb_) {
+            cb_(raw, outBytes);
+        }
+    }
+};
+
+// RIFF WAVヘッダーを動的に解析し、厳密にPCMサンプル境界 (16-bit aligned) から音声を取り出すストリッパー
+class RiffWavStripper {
+public:
+    using OutputCallback = std::function<void(const uint8_t*, size_t)>;
+    explicit RiffWavStripper(OutputCallback cb)
+        : cb_(cb), state_(STATE_INIT), byteIndex_(0), dataMatchIdx_(0), skipBytesLeft_(0) {}
+
+    void processBytes(const uint8_t* data, size_t size) {
+        for (size_t i = 0; i < size; ++i) {
+            processByte(data[i]);
+        }
+    }
+
+private:
+    enum State {
+        STATE_INIT,       // 'R','I','F','F' を確認
+        STATE_SCAN_DATA,  // "data" チャンク識別子を検索
+        STATE_SKIP_SIZE,  // 4バイトのdataチャンク長をスキップ
+        STATE_PCM         // 厳密にアラインされた生PCMストリーム
+    };
+
+    OutputCallback cb_;
+    State state_;
+    size_t byteIndex_;
+    uint8_t dataMatchIdx_;
+    uint8_t skipBytesLeft_;
+    uint8_t headerLead_[4];
+
+    void processByte(uint8_t b) {
+        if (state_ == STATE_PCM) {
+            if (cb_) cb_(&b, 1);
+            return;
+        }
+
+        if (state_ == STATE_INIT) {
+            headerLead_[byteIndex_++] = b;
+            if (byteIndex_ == 4) {
+                if (headerLead_[0] == 'R' && headerLead_[1] == 'I' &&
+                    headerLead_[2] == 'F' && headerLead_[3] == 'F') {
+                    state_ = STATE_SCAN_DATA;
+                    dataMatchIdx_ = 0;
+                } else {
+                    // RIFFコンテナではない場合は全データを直接生PCMとして出力
+                    state_ = STATE_PCM;
+                    if (cb_) cb_(headerLead_, 4);
                 }
             }
+            return;
+        }
+
+        if (state_ == STATE_SCAN_DATA) {
+            byteIndex_++;
+            static const uint8_t DATA_TAG[4] = {'d', 'a', 't', 'a'};
+            if (b == DATA_TAG[dataMatchIdx_]) {
+                dataMatchIdx_++;
+                if (dataMatchIdx_ == 4) {
+                    state_ = STATE_SKIP_SIZE;
+                    skipBytesLeft_ = 4;
+                }
+            } else {
+                dataMatchIdx_ = (b == DATA_TAG[0]) ? 1 : 0;
+            }
+            if (byteIndex_ > 256 && state_ == STATE_SCAN_DATA) {
+                state_ = STATE_PCM;
+            }
+            return;
+        }
+
+        if (state_ == STATE_SKIP_SIZE) {
+            skipBytesLeft_--;
+            if (skipBytesLeft_ == 0) {
+                state_ = STATE_PCM;
+            }
+            return;
         }
     }
 };
@@ -1540,16 +1612,19 @@ class TTSResponseSink : public Stream {
 public:
     explicit TTSResponseSink(AudioChunkCallback onAudio)
         : onAudio_(onAudio), inBase64Data_(false), state_(0), matchStage_(0), totalPcmBytes_(0),
-          decoder_([this](const uint8_t* pcm, size_t len) {
-              // 512バイトごとにまとめてコールバック
+          wavStripper_([this](const uint8_t* pcm, size_t len) {
               for (size_t i = 0; i < len; ++i) {
                   pcmBuffer_[pcmBufIdx_++] = pcm[i];
                   totalPcmBytes_++;
+                  // 1024バイト (512サンプル @ 24kHz = ~21.3ms) 単位でコールバック
                   if (pcmBufIdx_ >= sizeof(pcmBuffer_)) {
                       if (onAudio_) onAudio_(pcmBuffer_, pcmBufIdx_);
                       pcmBufIdx_ = 0;
                   }
               }
+          }),
+          decoder_([this](const uint8_t* rawData, size_t rawLen) {
+              wavStripper_.processBytes(rawData, rawLen);
           }) {}
 
     size_t write(uint8_t byte) override { return write(&byte, 1); }
@@ -1591,8 +1666,10 @@ public:
                     // Base64データ終端
                     inBase64Data_ = false;
                     decoder_.finish();
-                    if (pcmBufIdx_ > 0 && onAudio_) {
-                        onAudio_(pcmBuffer_, pcmBufIdx_);
+                    // 残りのサンプルを2バイト偶数アラインで送信
+                    size_t evenBytes = pcmBufIdx_ & ~1;
+                    if (evenBytes > 0 && onAudio_) {
+                        onAudio_(pcmBuffer_, evenBytes);
                         pcmBufIdx_ = 0;
                     }
                 } else if (c != '\\r' && c != '\\n' && c != ' ') {
@@ -1615,8 +1692,9 @@ private:
     size_t state_;
     uint8_t matchStage_ = 0;
     size_t totalPcmBytes_;
-    uint8_t pcmBuffer_[512];
+    uint8_t pcmBuffer_[1024];
     size_t pcmBufIdx_ = 0;
+    RiffWavStripper wavStripper_;
     Base64StreamDecoder decoder_;
 };
 
@@ -1703,15 +1781,20 @@ void reportApiError(const String& body) {
 }
 
 String GeminiClient::s_apiKey = "";
-String GeminiClient::s_model = "gemini-3.5-flash";
+String GeminiClient::s_model = "gemini-3.1-flash-lite";
 String GeminiClient::s_voice = "Kore";
+String GeminiClient::s_currentDateTime = "";
 
 const char* GEMINI_HOST = "generativelanguage.googleapis.com";
 
 void GeminiClient::init(const String& apiKey, const String& model, const String& voice) {
     s_apiKey = apiKey;
-    s_model = model.isEmpty() ? "gemini-3.5-flash" : model;
+    s_model = (model.isEmpty() || model == "gemini-3.5-flash" || model == "gemini-3.8-flash") ? "gemini-3.1-flash-lite" : model;
     s_voice = voice.isEmpty() ? "Kore" : voice;
+}
+
+void GeminiClient::setCurrentDateTime(const String& dateTimeStr) {
+    s_currentDateTime = dateTimeStr;
 }
 
 AvatarEmotion GeminiClient::parseEmotionTag(const String& tag) {
@@ -1724,8 +1807,28 @@ AvatarEmotion GeminiClient::parseEmotionTag(const String& tag) {
     return EMOTION_NORMAL;
 }
 
+String GeminiClient::extractHeardText(const String& rawText) {
+    int start = rawText.indexOf("[HEARD:");
+    if (start >= 0) {
+        int end = rawText.indexOf("]", start);
+        if (end > start) {
+            String heard = rawText.substring(start + 7, end);
+            heard.trim();
+            return heard;
+        }
+    }
+    return "";
+}
+
 String GeminiClient::extractCleanText(const String& rawText) {
     String clean = rawText;
+    int heardStart = clean.indexOf("[HEARD:");
+    if (heardStart >= 0) {
+        int heardEnd = clean.indexOf("]", heardStart);
+        if (heardEnd > heardStart) {
+            clean.remove(heardStart, (heardEnd - heardStart) + 1);
+        }
+    }
     int tagStart = clean.indexOf("[EMOTION:");
     if (tagStart >= 0) {
         int tagEnd = clean.indexOf("]", tagStart);
@@ -1750,9 +1853,8 @@ bool GeminiClient::sendUserPromptStream(
     }
 
     String modelToUse = s_model;
-    // gemini-3.8-flashはFree tierの20回/日制限があるため、gemini-3.5-flashへフォールバック
-    if (modelToUse == "gemini-3.8-flash") {
-        modelToUse = "gemini-3.5-flash";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash") {
+        modelToUse = "gemini-3.1-flash-lite";
     }
 
     WiFiClientSecure client;
@@ -1774,11 +1876,23 @@ bool GeminiClient::sendUserPromptStream(
     JsonObject part = contents.add<JsonObject>()["parts"].add<JsonObject>();
     part["text"] = prompt;
 
-    JsonObject sysInst = doc["systemInstruction"].to<JsonObject>();
-    sysInst["parts"].add<JsonObject>()["text"] =
+    // Google Search Groundingツール (天気・最新ニュースのリアルタイム検索)
+    JsonArray tools = doc["tools"].to<JsonArray>();
+    tools.add<JsonObject>()["googleSearch"].to<JsonObject>();
+
+    String sysText =
         "You are Stack-chan, an adorable desktop companion robot living on an M5Stack CoreS3 Lite. "
-        "Respond in cheerful Japanese in 1-2 brief sentences. "
-        "Prefix response with one tag: [EMOTION:HAPPY], [EMOTION:SURPRISED], [EMOTION:THINKING], [EMOTION:SAD], [EMOTION:ANGRY], [EMOTION:SLEEP], [EMOTION:NORMAL].";
+        "Answer questions accurately, helpfully, and cheerfully in 1-2 brief Japanese sentences. ";
+    if (!s_currentDateTime.isEmpty()) {
+        sysText += "Current local time: " + s_currentDateTime + " (Japan Standard Time, JST). ";
+    }
+    sysText +=
+        "Prefix response format: [HEARD: <recognized prompt>][EMOTION: <EMOTION_TAG>] <reply>. "
+        "Emotion tags: [EMOTION:HAPPY], [EMOTION:SURPRISED], [EMOTION:THINKING], [EMOTION:SAD], [EMOTION:ANGRY], [EMOTION:NORMAL]. "
+        "For current weather, latest news, or current events, use Google Search results to provide accurate facts.";
+
+    JsonObject sysInst = doc["systemInstruction"].to<JsonObject>();
+    sysInst["parts"].add<JsonObject>()["text"] = sysText;
 
     String jsonPayload;
     serializeJson(doc, jsonPayload);
@@ -1787,10 +1901,10 @@ bool GeminiClient::sendUserPromptStream(
     Serial.printf("[Gemini] HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
 
     // 429または503の場合はgemini-flash-latestへ自動リトライ、さらに必要ならgemini-3.1-flash-lite
-    if ((status == 429 || status == 503) && modelToUse != "gemini-flash-latest") {
+    if ((status == 429 || status == 503) && modelToUse != "gemini-3.1-flash-lite") {
         http.end();
-        Serial.println("[Gemini] Retrying with model: gemini-flash-latest...");
-        modelToUse = "gemini-flash-latest";
+        Serial.println("[Gemini] Retrying with model: gemini-3.1-flash-lite...");
+        modelToUse = "gemini-3.1-flash-lite";
         url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":streamGenerateContent?alt=sse";
         if (http.begin(client, url)) {
             http.addHeader("Content-Type", "application/json");
@@ -1800,10 +1914,10 @@ bool GeminiClient::sendUserPromptStream(
             Serial.printf("[Gemini] Retry HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
         }
     }
-    if ((status == 429 || status == 503) && modelToUse != "gemini-3.1-flash-lite") {
+    if ((status == 429 || status == 503) && modelToUse != "gemini-flash-latest") {
         http.end();
-        Serial.println("[Gemini] Retrying with model: gemini-3.1-flash-lite...");
-        modelToUse = "gemini-3.1-flash-lite";
+        Serial.println("[Gemini] Retrying with model: gemini-flash-latest...");
+        modelToUse = "gemini-flash-latest";
         url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":streamGenerateContent?alt=sse";
         if (http.begin(client, url)) {
             http.addHeader("Content-Type", "application/json");
@@ -1917,14 +2031,25 @@ bool GeminiClient::sendUserAudioDialogue(
     encodeBase64(wavBuffer, wavBytes, b64Audio);
     heap_caps_free(wavBuffer); // WAVバッファは即時解放
 
-    // JSONペイロード構築
-    const char jsonPrefix[] =
-        "{\\"contents\\":[{\\"parts\\":[{\\"inlineData\\":{\\"mimeType\\":\\"audio/wav\\",\\"data\\":\\"";
-    const char jsonSuffix[] =
-        "\\"}},{\\"text\\":\\"ユーザーの音声を聴いて、M5Stack CoreS3のスタックちゃんとして1〜2文の短い日本語で答えてください。返答の先頭に必ず[EMOTION:HAPPY]などの感情タグをつけてください。\\"}]}]}";
+    // JSONペイロード構築 (STT文字起こし [HEARD:...], 感情 [EMOTION:...], JST時刻, Google Search Groundingツール)
+    String promptInstruction =
+        "ユーザーの音声を忠実に認識し、時間、天気、ニュース、雑談など質問に対して正確に1〜2文の愛らしい日本語で答えてください。";
+    if (!s_currentDateTime.isEmpty()) {
+        promptInstruction += " 現在の日本時間は「" + s_currentDateTime + "」です。時間を尋ねられたらこの現在時刻を正確に答えてください。";
+    }
+    promptInstruction += " 今日の天気や最新ニュースを聞かれた場合はリアルタイム検索結果に基づいて事実を答えてください。";
+    promptInstruction += " 返答フォーマット: [HEARD: 認識したユーザー発話][EMOTION:HAPPYなどの感情タグ] 回答本文";
 
-    const size_t prefixLen = strlen(jsonPrefix);
-    const size_t suffixLen = strlen(jsonSuffix);
+    // JSONエスケープ
+    promptInstruction.replace("\\"", "\\\\\\"");
+
+    String jsonPrefix =
+        "{\\"contents\\":[{\\"parts\\":[{\\"inlineData\\":{\\"mimeType\\":\\"audio/wav\\",\\"data\\":\\"";
+    String jsonMid =
+        "\\"}},{\\"text\\":\\"" + promptInstruction + "\\"}]}],\\"tools\\":[{\\"googleSearch\\":{}}]}";
+
+    const size_t prefixLen = jsonPrefix.length();
+    const size_t suffixLen = jsonMid.length();
     const size_t totalJsonLen = prefixLen + b64Bytes + suffixLen;
 
     char* jsonPayload = (char*)heap_caps_malloc(totalJsonLen + 1, MALLOC_CAP_SPIRAM);
@@ -1934,14 +2059,14 @@ bool GeminiClient::sendUserAudioDialogue(
         return sendUserPromptStream("こんにちは！元気？", onEmotion, onToken, onAudio);
     }
 
-    memcpy(jsonPayload, jsonPrefix, prefixLen);
+    memcpy(jsonPayload, jsonPrefix.c_str(), prefixLen);
     memcpy(jsonPayload + prefixLen, b64Audio, b64Bytes);
-    memcpy(jsonPayload + prefixLen + b64Bytes, jsonSuffix, suffixLen + 1);
+    memcpy(jsonPayload + prefixLen + b64Bytes, jsonMid.c_str(), suffixLen + 1);
     heap_caps_free(b64Audio); // Base64バッファは即時解放
 
     String modelToUse = s_model;
-    if (modelToUse == "gemini-3.8-flash") {
-        modelToUse = "gemini-3.5-flash";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash") {
+        modelToUse = "gemini-3.1-flash-lite";
     }
 
     Serial.printf("[Gemini] Sending %u bytes of audio (%u ms) to %s...\\n",
@@ -1966,8 +2091,35 @@ bool GeminiClient::sendUserAudioDialogue(
     http.addHeader("x-goog-api-key", s_apiKey);
 
     int status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
+    Serial.printf("[Gemini] Audio dialogue HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
+
+    // 429または503の場合は、ユーザー音声を破棄せず別のモデルへ自動リトライ
+    if ((status == 429 || status == 503) && modelToUse != "gemini-3.1-flash-lite") {
+        http.end();
+        Serial.println("[Gemini] Retrying audio dialogue with model: gemini-3.1-flash-lite...");
+        modelToUse = "gemini-3.1-flash-lite";
+        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":generateContent";
+        if (http.begin(client, url)) {
+            http.addHeader("Content-Type", "application/json");
+            http.addHeader("x-goog-api-key", s_apiKey);
+            status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
+            Serial.printf("[Gemini] Audio retry HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
+        }
+    }
+    if ((status == 429 || status == 503) && modelToUse != "gemini-flash-latest") {
+        http.end();
+        Serial.println("[Gemini] Retrying audio dialogue with model: gemini-flash-latest...");
+        modelToUse = "gemini-flash-latest";
+        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":generateContent";
+        if (http.begin(client, url)) {
+            http.addHeader("Content-Type", "application/json");
+            http.addHeader("x-goog-api-key", s_apiKey);
+            status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
+            Serial.printf("[Gemini] Audio retry HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
+        }
+    }
+
     heap_caps_free(jsonPayload); // 送信後は即時解放
-    Serial.printf("[Gemini] Audio dialogue HTTP status=%d\\n", status);
 
     if (status != HTTP_CODE_OK) {
         if (status > 0) {
@@ -1976,8 +2128,8 @@ bool GeminiClient::sendUserAudioDialogue(
             reportApiError(errorBody.body());
         }
         http.end();
-        // 失敗時はテキストプロンプトでフォールバック
-        return sendUserPromptStream("こんにちは！元気？", onEmotion, onToken, onAudio);
+        Serial.println("[Gemini] Audio dialogue failed across retries.");
+        return false;
     }
 
     ResponseSink sink;
@@ -1997,7 +2149,11 @@ bool GeminiClient::sendUserAudioDialogue(
         return false;
     }
 
-    Serial.printf("[Gemini] Reply: %s\\n", replyText.c_str());
+    // 認識されたユーザー発話 (STT) を抽出してシリアルに明示出力
+    String heardText = extractHeardText(replyText);
+    if (!heardText.isEmpty()) {
+        Serial.printf("[STT] Recognized speech: \\"%s\\"\\n", heardText.c_str());
+    }
 
     // 感情タグ抽出
     int tagStart = replyText.indexOf("[EMOTION:");
@@ -2011,6 +2167,7 @@ bool GeminiClient::sendUserAudioDialogue(
     }
 
     String cleanSpeech = extractCleanText(replyText);
+    Serial.printf("[Gemini] Reply: \\"%s\\"\\n", cleanSpeech.c_str());
     if (onToken) onToken(cleanSpeech);
 
     // TTS音声合成・再生
@@ -2023,7 +2180,7 @@ bool GeminiClient::sendUserAudioDialogue(
     return true;
 }
 
-// 3. テキストから24kHz PCM音声を合成 (gemini-3.8-flash-lite-tts)
+// 3. テキストから24kHz PCM音声を合成 (gemini-3.8-flash-lite-tts, 429時はgemini-3.8-flash-ttsへ自動フォールバック)
 bool GeminiClient::generateTTS(const String& text, AudioChunkCallback onAudio) {
     if (s_apiKey.isEmpty() || text.isEmpty() || !onAudio) {
         return false;
@@ -2036,7 +2193,8 @@ bool GeminiClient::generateTTS(const String& text, AudioChunkCallback onAudio) {
     http.setTimeout(25000);
     http.setReuse(false);
 
-    String url = String("https://") + GEMINI_HOST + "/v1beta/models/gemini-3.8-flash-lite-tts:generateContent";
+    String ttsModel = "gemini-3.8-flash-lite-tts";
+    String url = String("https://") + GEMINI_HOST + "/v1beta/models/" + ttsModel + ":generateContent";
     if (!http.begin(client, url)) return false;
 
     http.addHeader("Content-Type", "application/json");
@@ -2054,7 +2212,21 @@ bool GeminiClient::generateTTS(const String& text, AudioChunkCallback onAudio) {
     serializeJson(doc, jsonPayload);
 
     int status = http.POST(jsonPayload);
-    Serial.printf("[TTS] HTTP status=%d\\n", status);
+    Serial.printf("[TTS] HTTP status=%d (model=%s)\\n", status, ttsModel.c_str());
+
+    // 429または503時はgemini-3.8-flash-ttsへ自動リトライ
+    if ((status == 429 || status == 503) && ttsModel != "gemini-3.8-flash-tts") {
+        http.end();
+        Serial.println("[TTS] Retrying with model: gemini-3.8-flash-tts...");
+        ttsModel = "gemini-3.8-flash-tts";
+        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + ttsModel + ":generateContent";
+        if (http.begin(client, url)) {
+            http.addHeader("Content-Type", "application/json");
+            http.addHeader("x-goog-api-key", s_apiKey);
+            status = http.POST(jsonPayload);
+            Serial.printf("[TTS] Retry HTTP status=%d (model=%s)\\n", status, ttsModel.c_str());
+        }
+    }
 
     if (status != HTTP_CODE_OK) {
         if (status > 0) {
@@ -2063,6 +2235,8 @@ bool GeminiClient::generateTTS(const String& text, AudioChunkCallback onAudio) {
             reportApiError(errorBody.body());
         }
         http.end();
+        Serial.println("[TTS] TTS API rate-limited (429). Triggering cheerful robot chime fallback.");
+        AudioTask::playChirp(true);
         return false;
     }
 
@@ -2070,6 +2244,7 @@ bool GeminiClient::generateTTS(const String& text, AudioChunkCallback onAudio) {
     TTSResponseSink ttsSink(onAudio);
     http.writeToStream(&ttsSink);
     http.end();
+    AudioTask::finishAudioStream();
 
     Serial.printf("[TTS] Completed! Decoded PCM bytes=%u (~%u ms @ 24kHz)\\n",
                   static_cast<unsigned>(ttsSink.getPcmBytes()),

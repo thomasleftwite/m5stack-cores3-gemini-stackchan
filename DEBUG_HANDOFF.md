@@ -52,7 +52,13 @@ M5Stack CoreS3 / CoreS3 Lite（ESP32-S3、8MB Quad SPI PSRAM、AW88298 I2Sアン
   - TTSモデル階層自動切替: `gemini-3.8-flash-lite-tts` → `gemini-3.8-flash-tts`。
   - TTS全枠枯渇時: クラッシュや完全沈黙を避け、`AudioTask::playChirp(true)` により可愛らしい電子チャイム音で応答を受領したことを表現。
 
-### 3. ハードウェア給電（TAKAO v1.2 & SG90）とI2Sの留意事項
+### 3. ビルド修正記録（2026-10-09 / R10）
+- `firmware/src/GeminiClient.cpp`:
+  - `Base64StreamDecoder` コンストラクタ初期化子リストから未宣言の `totalDecodedBytes_(0)` を削除。
+  - `AudioTask::playChirp` および `AudioTask::finishAudioStream` を呼び出すため、`#include "AudioTask.h"` を追加。
+  - `lib/firmware-sources.ts` にも最新の `GeminiClient.cpp` を同期反映。
+
+### 4. ハードウェア給電（TAKAO v1.2 & SG90）とI2Sの留意事項
 - **給電経路**: TAKAO v1.2 の Grove CN2 pin3 とサーボ pin2 は同一の +5V ネット。
   - サーボ動作時はPC USBを外し、TAKAO外部USB電源（5V 2A以上）単独・SW1 ONで給電する。
   - PC USB書込み・シリアル監視時は、Groveコネクタを抜いてPC USB単独で接続する。
