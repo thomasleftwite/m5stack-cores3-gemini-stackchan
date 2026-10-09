@@ -161,13 +161,14 @@ void motionTaskCode(void* pv) {
 }
 
 void setup() {
-    // 1. M5Unifiedの初期化 (CoreS3 ハーフデュプレックスI2S対応)
-    // CoreS3はマイク(ES7210)とスピーカー(AW88298)が単一のI2Sバスを共有するため、
-    // M5.begin() ではI2Sを自動起動せず、AudioTask ワーカタスクが排他制御で直列管理する
+    // 1. M5Unifiedの初期化 (CoreS3 オーディオコーデック給電 & ハードウェア初期化)
+    // internal_spk = true, internal_mic = true に設定することで、
+    // M5Unified が AXP2101 PMIC 電源レール、ES7210マイクADC (I2C 0x40)、AW88298アンプ (I2C 0x36) を正しく給電・初期化する。
+    // I2Sバスの排他制御は AudioTask::init() 以降で排他直列管理を行う。
     auto cfg = M5.config();
     cfg.serial_baudrate = 115200;
-    cfg.internal_spk = false;
-    cfg.internal_mic = false;
+    cfg.internal_spk = true;
+    cfg.internal_mic = true;
     M5.begin(cfg);
 
     Serial.println("=== M5Stack CoreS3 Lite Gemini Stack-chan ===");

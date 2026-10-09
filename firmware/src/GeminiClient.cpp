@@ -364,11 +364,24 @@ bool GeminiClient::sendUserPromptStream(
     int status = http.POST(jsonPayload);
     Serial.printf("[Gemini] HTTP status=%d (model=%s)\n", status, modelToUse.c_str());
 
-    // 429または503の場合はgemini-flash-latestへ自動リトライ
+    // 429または503の場合はgemini-flash-latestへ自動リトライ、さらに必要ならgemini-3.1-flash-lite
     if ((status == 429 || status == 503) && modelToUse != "gemini-flash-latest") {
         http.end();
         Serial.println("[Gemini] Retrying with model: gemini-flash-latest...");
         modelToUse = "gemini-flash-latest";
+        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":streamGenerateContent?alt=sse";
+        if (http.begin(client, url)) {
+            http.addHeader("Content-Type", "application/json");
+            http.addHeader("x-goog-api-key", s_apiKey);
+            http.collectHeaders(responseHeaders, 1);
+            status = http.POST(jsonPayload);
+            Serial.printf("[Gemini] Retry HTTP status=%d (model=%s)\n", status, modelToUse.c_str());
+        }
+    }
+    if ((status == 429 || status == 503) && modelToUse != "gemini-3.1-flash-lite") {
+        http.end();
+        Serial.println("[Gemini] Retrying with model: gemini-3.1-flash-lite...");
+        modelToUse = "gemini-3.1-flash-lite";
         url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":streamGenerateContent?alt=sse";
         if (http.begin(client, url)) {
             http.addHeader("Content-Type", "application/json");

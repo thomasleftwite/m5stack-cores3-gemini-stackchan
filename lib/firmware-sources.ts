@@ -948,9 +948,17 @@ void AudioTask::init(uint8_t micGain, uint8_t spkVolume) {
         }
     }
 
+    // M5.begin(cfg) で両方のデバイス(ES7210マイク/AW88298スピーカー)が給電・初期化されている。
+    // CoreS3の単一I2Sバス競合を防ぐため、初期状態はスピーカーを一旦停止・終了し、
+    // マイク待受モードを排他起動する。
+    M5.Speaker.stop();
+    M5.Speaker.end();
+    vTaskDelay(pdMS_TO_TICKS(20));
+
+    s_currentMode = AUDIO_MODE_MIC;
     s_requestedMode = AUDIO_MODE_MIC;
-    s_currentMode = AUDIO_MODE_UNINIT;
     s_lastVoiceTime = millis();
+    Serial.println("[Audio] Audio subsystem initialized in MIC mode.");
 }
 
 void AudioTask::start() {
@@ -1011,6 +1019,14 @@ bool AudioTask::isPlaying() {
 void AudioTask::stopPlayback() {
     s_requestedMode = AUDIO_MODE_MIC;
     s_isPlaying = false;
+    // リングバッファに残っている未再生PCMをフラッシュ
+    if (s_audioRingBuf) {
+        size_t dummySize = 0;
+        void* dummy = nullptr;
+        while ((dummy = xRingbufferReceiveUpTo(s_audioRingBuf, &dummySize, 0, 1024)) != nullptr) {
+            vRingbufferReturnItem(s_audioRingBuf, dummy);
+        }
+    }
 }
 
 void AudioTask::startRecording() {
@@ -1024,7 +1040,7 @@ void AudioTask::startRecording() {
 
 void AudioTask::stopRecording() {
     s_isRecording = false;
-    Serial.printf("[Audio] Recording stopped. Samples=%u (%u ms), speechSamples=%u (%u ms)\\n",
+    Serial.printf("[Audio] Recording stopped. Samples=%u (%u ms), speechSamples=%u (%u ms)\n",
                   static_cast<unsigned>(s_recordSampleCount),
                   static_cast<unsigned>(s_recordSampleCount * 1000 / 16000),
                   static_cast<unsigned>(s_speechSampleCount),
@@ -1052,10 +1068,10 @@ bool AudioTask::hasMeaningfulSpeech() {
 void AudioTask::audioWorkerTask(void* pvParameters) {
     int16_t micBuffer[256];
 
-    // 4面ローテーションバッファ (各512サンプル = 1024バイト = 約21.3ms @ 24kHz)
+    // 8面ローテーションバッファ (各512サンプル = 1024バイト = 約21.3ms @ 24kHz)
     // M5.Speaker.playRaw はポインタをDMAキューに保持するため、
-    // DMA転送完了前に上書きされないようローテーションバッファを使用
-    static int16_t spkBuffers[4][512];
+    // 8面 (~170ms) のローテーションバッファでDMA転送完了前のデータ上書きを確実に防止
+    static int16_t spkBuffers[8][512];
     static size_t spkBufIdx = 0;
     static uint32_t lastChunkMillis = 0;
 
@@ -1066,7 +1082,7 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                 Serial.println("[Audio] Switching I2S: MIC (ES7210) -> SPEAKER (AW88298)...");
                 if (s_currentMode == AUDIO_MODE_MIC) {
                     M5.Mic.end();
-                    vTaskDelay(pdMS_TO_TICKS(15));
+                    vTaskDelay(pdMS_TO_TICKS(20));
                 }
                 M5.Speaker.begin();
                 M5.Speaker.setVolume(s_spkVolume);
@@ -1082,7 +1098,7 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
                         vTaskDelay(pdMS_TO_TICKS(5));
                     }
                     M5.Speaker.end();
-                    vTaskDelay(pdMS_TO_TICKS(15));
+                    vTaskDelay(pdMS_TO_TICKS(20));
                 }
                 M5.Mic.begin();
                 s_currentMode = AUDIO_MODE_MIC;
@@ -1152,7 +1168,7 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
 
                     // Channel 0 で24kHz mono 16bit PCM再生
                     M5.Speaker.playRaw(spkBuffers[spkBufIdx], samples, 24000, false, 1, 0);
-                    spkBufIdx = (spkBufIdx + 1) % 4;
+                    spkBufIdx = (spkBufIdx + 1) % 8;
 
                     s_isPlaying = true;
                     lastChunkMillis = millis();
@@ -1162,8 +1178,8 @@ void AudioTask::audioWorkerTask(void* pvParameters) {
 
             // リングバッファが空で、かつスピーカー再生キューも空になった場合
             if (!chunkFed && playingState == 0) {
-                // 最後のPCMチャンク投入から200ms以上経過していたら再生完了
-                if (s_isPlaying && (millis() - lastChunkMillis > 200)) {
+                // 最後のPCMチャンク投入から250ms以上経過していたら再生完了
+                if (s_isPlaying && (millis() - lastChunkMillis > 250)) {
                     s_isPlaying = false;
                     s_liveRMS = 0.0f;
                     Serial.println("[Audio] Playback completed. Returning to MIC mode.");
@@ -1770,11 +1786,24 @@ bool GeminiClient::sendUserPromptStream(
     int status = http.POST(jsonPayload);
     Serial.printf("[Gemini] HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
 
-    // 429または503の場合はgemini-flash-latestへ自動リトライ
+    // 429または503の場合はgemini-flash-latestへ自動リトライ、さらに必要ならgemini-3.1-flash-lite
     if ((status == 429 || status == 503) && modelToUse != "gemini-flash-latest") {
         http.end();
         Serial.println("[Gemini] Retrying with model: gemini-flash-latest...");
         modelToUse = "gemini-flash-latest";
+        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":streamGenerateContent?alt=sse";
+        if (http.begin(client, url)) {
+            http.addHeader("Content-Type", "application/json");
+            http.addHeader("x-goog-api-key", s_apiKey);
+            http.collectHeaders(responseHeaders, 1);
+            status = http.POST(jsonPayload);
+            Serial.printf("[Gemini] Retry HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
+        }
+    }
+    if ((status == 429 || status == 503) && modelToUse != "gemini-3.1-flash-lite") {
+        http.end();
+        Serial.println("[Gemini] Retrying with model: gemini-3.1-flash-lite...");
+        modelToUse = "gemini-3.1-flash-lite";
         url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":streamGenerateContent?alt=sse";
         if (http.begin(client, url)) {
             http.addHeader("Content-Type", "application/json");
@@ -2218,13 +2247,14 @@ void motionTaskCode(void* pv) {
 }
 
 void setup() {
-    // 1. M5Unifiedの初期化 (CoreS3 ハーフデュプレックスI2S対応)
-    // CoreS3はマイク(ES7210)とスピーカー(AW88298)が単一のI2Sバスを共有するため、
-    // M5.begin() ではI2Sを自動起動せず、AudioTask ワーカタスクが排他制御で直列管理する
+    // 1. M5Unifiedの初期化 (CoreS3 オーディオコーデック給電 & ハードウェア初期化)
+    // internal_spk = true, internal_mic = true に設定することで、
+    // M5Unified が AXP2101 PMIC 電源レール、ES7210マイクADC (I2C 0x40)、AW88298アンプ (I2C 0x36) を正しく給電・初期化する。
+    // I2Sバスの排他制御は AudioTask::init() 以降で排他直列管理を行う。
     auto cfg = M5.config();
     cfg.serial_baudrate = 115200;
-    cfg.internal_spk = false;
-    cfg.internal_mic = false;
+    cfg.internal_spk = true;
+    cfg.internal_mic = true;
     M5.begin(cfg);
 
     Serial.println("=== M5Stack CoreS3 Lite Gemini Stack-chan ===");
