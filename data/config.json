@@ -1,0 +1,15 @@
+{
+  "gemini_api_key": "AIzaSyYOUR_GEMINI_API_KEY",
+  "gemini_model": "gemini-3.8-flash",
+  "tts_voice": "Kore",
+  "wake_word": "スタックちゃん",
+  "silence_timeout_sec": 6,
+  "camera_motion_threshold": 25,
+  "spk_volume": 160,
+  "mic_gain": 80,
+  "servo_enabled": true,
+  "servo_pan_pin": 2,
+  "servo_tilt_pin": 1,
+  "servo_pan_center": 90,
+  "servo_tilt_center": 90
+}

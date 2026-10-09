@@ -163,13 +163,6 @@ git branch -M main
 git push -u origin main
 ```
 
-## 開発用Web画面
-
-Next.jsアプリの設定画面とZIP内ファームウェアもWiFiManager方式です。WiFi情報はWeb画面では入力しません。
-
-## 📜 ライセンス
-MIT License
-
 ## TLSメモリ不足修正（2026-10-09 / R02）
 
 CoreS3 LiteのQuad SPI PSRAMに合わせ、`board_build.arduino.memory_type = qio_qspi` を使用します。旧OPI設定では実機のPSRAM容量が0になり、TLSが内部RAM不足で失敗しました。変更後は約8MBのPSRAM認識とTLS接続成功を実測しています。詳細と回帰確認手順は `TLS_MEMORY_DIAGNOSTIC.md` を参照してください。
@@ -189,10 +182,6 @@ SCCBによる内部I2Cドライバの二重登録を修正しました。実機�
 ## 外部給電申告後の再検証（2026-10-09 / R06）
 
 サーボを再有効化してタッチ→Gemini送信を確認しましたが、本体消灯・USB切断が再発しました。現在はサーボ停止設定1へ戻しています。設計元TAKAO基板v1.2.1はGroveとサーボの5Vが共通であり、スイッチだけで給電分離できるとは限りません。実物の版数・配線・電源容量を確認するまで電源分離完了とは扱いません。詳細は `POWER_VALIDATION.md` のR06を参照してください。
-
-## デバッグ再開用の要約
-
-これまでの変更、実機結果、給電手順、未完了項目は [DEBUG_HANDOFF.md](DEBUG_HANDOFF.md) に集約しています。最新の確認はR08です。
 
 ## 外部電源単独での検証（2026-10-09 / R07）
 
