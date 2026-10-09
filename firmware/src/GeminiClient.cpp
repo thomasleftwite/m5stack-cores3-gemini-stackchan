@@ -359,7 +359,7 @@ void reportApiError(const String& body) {
 }
 
 String GeminiClient::s_apiKey = "";
-String GeminiClient::s_model = "gemini-3.1-flash-lite";
+String GeminiClient::s_model = "gemini-2.5-flash";
 String GeminiClient::s_voice = "Kore";
 String GeminiClient::s_currentDateTime = "";
 
@@ -367,7 +367,7 @@ const char* GEMINI_HOST = "generativelanguage.googleapis.com";
 
 void GeminiClient::init(const String& apiKey, const String& model, const String& voice) {
     s_apiKey = apiKey;
-    s_model = (model.isEmpty() || model == "gemini-3.5-flash" || model == "gemini-3.8-flash") ? "gemini-3.1-flash-lite" : model;
+    s_model = (model.isEmpty() || model == "gemini-3.5-flash" || model == "gemini-3.8-flash" || model == "gemini-3.1-flash-lite") ? "gemini-2.5-flash" : model;
     s_voice = voice.isEmpty() ? "Kore" : voice;
 }
 
@@ -431,8 +431,8 @@ bool GeminiClient::sendUserPromptStream(
     }
 
     String modelToUse = s_model;
-    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash") {
-        modelToUse = "gemini-3.1-flash-lite";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash" || modelToUse == "gemini-3.1-flash-lite") {
+        modelToUse = "gemini-2.5-flash";
     }
 
     WiFiClientSecure client;
@@ -643,8 +643,8 @@ bool GeminiClient::sendUserAudioDialogue(
     heap_caps_free(b64Audio); // Base64バッファは即時解放
 
     String modelToUse = s_model;
-    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash") {
-        modelToUse = "gemini-3.1-flash-lite";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash" || modelToUse == "gemini-3.1-flash-lite") {
+        modelToUse = "gemini-2.5-flash";
     }
 
     Serial.printf("[Gemini] Sending %u bytes of audio (%u ms) to %s...\n",
@@ -672,32 +672,27 @@ bool GeminiClient::sendUserAudioDialogue(
     Serial.printf("[Gemini] Audio dialogue HTTP status=%d (model=%s)\n", status, modelToUse.c_str());
 
     // 429または503の場合は、ユーザー音声を破棄せず別のモデルへ自動リトライ
-    if ((status == 429 || status == 503) && modelToUse != "gemini-3.1-flash-lite") {
-        http.end();
-        Serial.println("[Gemini] Retrying audio dialogue with model: gemini-3.1-flash-lite...");
-        modelToUse = "gemini-3.1-flash-lite";
-        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":generateContent";
-        if (http.begin(client, url)) {
-            http.addHeader("Content-Type", "application/json");
-            http.addHeader("x-goog-api-key", s_apiKey);
-            status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
-            Serial.printf("[Gemini] Audio retry HTTP status=%d (model=%s)\n", status, modelToUse.c_str());
-        }
-    }
-    if ((status == 429 || status == 503) && modelToUse != "gemini-flash-latest") {
-        http.end();
-        Serial.println("[Gemini] Retrying audio dialogue with model: gemini-flash-latest...");
-        modelToUse = "gemini-flash-latest";
-        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":generateContent";
-        if (http.begin(client, url)) {
-            http.addHeader("Content-Type", "application/json");
-            http.addHeader("x-goog-api-key", s_apiKey);
-            status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
-            Serial.printf("[Gemini] Audio retry HTTP status=%d (model=%s)\n", status, modelToUse.c_str());
+    const char* fallbackModels[] = {"gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"};
+    for (const char* fbModel : fallbackModels) {
+        if ((status == 429 || status == 503) && modelToUse != fbModel) {
+            http.end();
+            Serial.printf("[Gemini] Retrying audio dialogue with fallback model: %s...\n", fbModel);
+            modelToUse = fbModel;
+            url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":generateContent";
+            if (http.begin(client, url)) {
+                http.addHeader("Content-Type", "application/json");
+                http.addHeader("x-goog-api-key", s_apiKey);
+                status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
+                Serial.printf("[Gemini] Audio retry HTTP status=%d (model=%s)\n", status, modelToUse.c_str());
+            }
         }
     }
 
     heap_caps_free(jsonPayload); // 送信後は即時解放
+
+    if (status == 429) {
+        Serial.println("[Gemini] API status=429 (QUOTA_EXCEEDED). Wait ~1-2 min for rolling RPM recovery, or 16:00/17:00 JST for daily RPD reset.");
+    }
 
     if (status != HTTP_CODE_OK) {
         if (status > 0) {

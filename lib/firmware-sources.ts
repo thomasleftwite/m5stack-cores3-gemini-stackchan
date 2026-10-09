@@ -1781,7 +1781,7 @@ void reportApiError(const String& body) {
 }
 
 String GeminiClient::s_apiKey = "";
-String GeminiClient::s_model = "gemini-3.1-flash-lite";
+String GeminiClient::s_model = "gemini-2.5-flash";
 String GeminiClient::s_voice = "Kore";
 String GeminiClient::s_currentDateTime = "";
 
@@ -1789,7 +1789,7 @@ const char* GEMINI_HOST = "generativelanguage.googleapis.com";
 
 void GeminiClient::init(const String& apiKey, const String& model, const String& voice) {
     s_apiKey = apiKey;
-    s_model = (model.isEmpty() || model == "gemini-3.5-flash" || model == "gemini-3.8-flash") ? "gemini-3.1-flash-lite" : model;
+    s_model = (model.isEmpty() || model == "gemini-3.5-flash" || model == "gemini-3.8-flash" || model == "gemini-3.1-flash-lite") ? "gemini-2.5-flash" : model;
     s_voice = voice.isEmpty() ? "Kore" : voice;
 }
 
@@ -1853,8 +1853,8 @@ bool GeminiClient::sendUserPromptStream(
     }
 
     String modelToUse = s_model;
-    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash") {
-        modelToUse = "gemini-3.1-flash-lite";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash" || modelToUse == "gemini-3.1-flash-lite") {
+        modelToUse = "gemini-2.5-flash";
     }
 
     WiFiClientSecure client;
@@ -2065,8 +2065,8 @@ bool GeminiClient::sendUserAudioDialogue(
     heap_caps_free(b64Audio); // Base64バッファは即時解放
 
     String modelToUse = s_model;
-    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash") {
-        modelToUse = "gemini-3.1-flash-lite";
+    if (modelToUse.isEmpty() || modelToUse == "gemini-3.5-flash" || modelToUse == "gemini-3.8-flash" || modelToUse == "gemini-3.1-flash-lite") {
+        modelToUse = "gemini-2.5-flash";
     }
 
     Serial.printf("[Gemini] Sending %u bytes of audio (%u ms) to %s...\\n",
@@ -2094,32 +2094,27 @@ bool GeminiClient::sendUserAudioDialogue(
     Serial.printf("[Gemini] Audio dialogue HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
 
     // 429または503の場合は、ユーザー音声を破棄せず別のモデルへ自動リトライ
-    if ((status == 429 || status == 503) && modelToUse != "gemini-3.1-flash-lite") {
-        http.end();
-        Serial.println("[Gemini] Retrying audio dialogue with model: gemini-3.1-flash-lite...");
-        modelToUse = "gemini-3.1-flash-lite";
-        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":generateContent";
-        if (http.begin(client, url)) {
-            http.addHeader("Content-Type", "application/json");
-            http.addHeader("x-goog-api-key", s_apiKey);
-            status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
-            Serial.printf("[Gemini] Audio retry HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
-        }
-    }
-    if ((status == 429 || status == 503) && modelToUse != "gemini-flash-latest") {
-        http.end();
-        Serial.println("[Gemini] Retrying audio dialogue with model: gemini-flash-latest...");
-        modelToUse = "gemini-flash-latest";
-        url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":generateContent";
-        if (http.begin(client, url)) {
-            http.addHeader("Content-Type", "application/json");
-            http.addHeader("x-goog-api-key", s_apiKey);
-            status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
-            Serial.printf("[Gemini] Audio retry HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
+    const char* fallbackModels[] = {"gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"};
+    for (const char* fbModel : fallbackModels) {
+        if ((status == 429 || status == 503) && modelToUse != fbModel) {
+            http.end();
+            Serial.printf("[Gemini] Retrying audio dialogue with fallback model: %s...\\n", fbModel);
+            modelToUse = fbModel;
+            url = String("https://") + GEMINI_HOST + "/v1beta/models/" + modelToUse + ":generateContent";
+            if (http.begin(client, url)) {
+                http.addHeader("Content-Type", "application/json");
+                http.addHeader("x-goog-api-key", s_apiKey);
+                status = http.sendRequest("POST", (uint8_t*)jsonPayload, totalJsonLen);
+                Serial.printf("[Gemini] Audio retry HTTP status=%d (model=%s)\\n", status, modelToUse.c_str());
+            }
         }
     }
 
     heap_caps_free(jsonPayload); // 送信後は即時解放
+
+    if (status == 429) {
+        Serial.println("[Gemini] API status=429 (QUOTA_EXCEEDED). Wait ~1-2 min for rolling RPM recovery, or 16:00/17:00 JST for daily RPD reset.");
+    }
 
     if (status != HTTP_CODE_OK) {
         if (status > 0) {
@@ -2374,7 +2369,20 @@ static void setupWiFi() {
         while (true) delay(1000);
     }
     WiFi.setAutoReconnect(true);
+    configTime(9 * 3600, 0, "ntp.nict.jp", "pool.ntp.org", "time.google.com");
+    Serial.println("[Time] NTP time sync configured for JST (UTC+9).");
     Serial.println("[WiFi] Setup complete.");
+}
+
+static String getFormattedJSTTime() {
+    time_t now = time(nullptr);
+    struct tm timeinfo;
+    if (localtime_r(&now, &timeinfo) && timeinfo.tm_year > (2020 - 1900)) {
+        char buf[64];
+        strftime(buf, sizeof(buf), "%Y年%m月%d日 %H時%M分", &timeinfo);
+        return String(buf);
+    }
+    return "";
 }
 
 // 1. アバター描画 & サーボ補間タスク (Core 1 / 60FPS)
@@ -2479,6 +2487,7 @@ void setup() {
 }
 
 static uint32_t s_speechEndTimestamp = 0;
+static bool s_lastRequestSuccess = true;
 
 void loop() {
     M5.update();
@@ -2525,19 +2534,26 @@ void loop() {
         case STATE_LISTENING:
             if (AudioTask::isVoiceDetected()) {
                 AudioTask::resetSilenceTimer();
-            } else if (silenceMs > 1500) {
-                // 発話終端検出
+            } else if (silenceMs > 1200) {
+                // 発話終端検出 (1.2秒の無音で思考状態へ移行)
                 AudioTask::stopRecording();
                 g_state = STATE_THINKING;
                 g_avatar.setEmotion(EMOTION_THINKING);
                 if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_THINKING);
+
+                String jstTime = getFormattedJSTTime();
+                if (!jstTime.isEmpty()) {
+                    GeminiClient::setCurrentDateTime(jstTime);
+                }
 
                 bool requestOk = false;
                 size_t samples = 0;
                 const int16_t* pcm = AudioTask::getRecordedPCM(&samples);
 
                 if (AudioTask::hasMeaningfulSpeech() && pcm && samples > 1600) {
-                    Serial.println("[VAD] Meaningful user speech recorded. Sending audio to Gemini...");
+                    Serial.printf("[VAD] User speech captured (%u samples, %u ms). Sending audio to Gemini...\\n",
+                                  static_cast<unsigned>(samples),
+                                  static_cast<unsigned>(samples * 1000 / 16000));
                     requestOk = GeminiClient::sendUserAudioDialogue(
                         pcm,
                         samples,
@@ -2551,7 +2567,7 @@ void loop() {
                         }
                     );
                 } else {
-                    Serial.println("[VAD] Tap or brief prompt. Sending text greeting to Gemini...");
+                    Serial.println("[VAD] Tap or very short prompt. Sending greeting...");
                     requestOk = GeminiClient::sendUserPromptStream(
                         "こんにちは！元気？",
                         [](AvatarEmotion emo) {
@@ -2566,14 +2582,17 @@ void loop() {
                 }
 
                 if (requestOk && AudioTask::isPlaying()) {
+                    s_lastRequestSuccess = true;
                     g_state = STATE_SPEAKING;
                 } else if (!requestOk) {
+                    s_lastRequestSuccess = false;
                     g_avatar.setEmotion(EMOTION_SAD);
                     if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SAD);
-                    g_state = STATE_WAIT_FOLLOWUP;
-                    AudioTask::resetSilenceTimer();
-                    s_speechEndTimestamp = millis();
+                    Serial.println("[State] Request failed or quota exceeded. Playing error chime...");
+                    AudioTask::playChirp(false); // 困惑・エラーを表現する下降トーン
+                    g_state = STATE_SPEAKING;
                 } else {
+                    s_lastRequestSuccess = true;
                     g_state = STATE_WAIT_FOLLOWUP;
                     AudioTask::resetSilenceTimer();
                     s_speechEndTimestamp = millis();
@@ -2583,16 +2602,21 @@ void loop() {
 
         case STATE_SPEAKING:
             if (!AudioTask::isPlaying()) {
-                Serial.println("[Speech] Audio playback finished. Transitioning to WAIT_FOLLOWUP.");
-                g_state = STATE_WAIT_FOLLOWUP;
+                if (s_lastRequestSuccess) {
+                    Serial.println("[Speech] Audio playback finished. Transitioning to WAIT_FOLLOWUP.");
+                    g_state = STATE_WAIT_FOLLOWUP;
+                } else {
+                    Serial.println("[Speech] Error chime finished. Returning to STANDBY (prevents rapid retry loop).");
+                    g_state = STATE_STANDBY_WAIT_KEYWORD;
+                }
                 AudioTask::resetSilenceTimer();
                 s_speechEndTimestamp = millis();
             }
             break;
 
         case STATE_WAIT_FOLLOWUP:
-            // スピーカー再生直後の600msクールダウン (スピーカー残響・マイク回り込みによる誤検知を遮断)
-            if (millis() - s_speechEndTimestamp > 600) {
+            // スピーカー再生直後の1200msクールダウン (スピーカー残響・マイク回り込みによる誤検知を遮断)
+            if (millis() - s_speechEndTimestamp > 1200) {
                 if (AudioTask::isVoiceDetected()) {
                     Serial.println("[Voice] Follow-up speech detected. Returning to LISTENING...");
                     g_state = STATE_LISTENING;

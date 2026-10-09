@@ -58,7 +58,18 @@ M5Stack CoreS3 / CoreS3 Lite（ESP32-S3、8MB Quad SPI PSRAM、AW88298 I2Sアン
   - `AudioTask::playChirp` および `AudioTask::finishAudioStream` を呼び出すため、`#include "AudioTask.h"` を追加。
   - `lib/firmware-sources.ts` にも最新の `GeminiClient.cpp` を同期反映。
 
-### 4. ハードウェア給電（TAKAO v1.2 & SG90）とI2Sの留意事項
+### 4. 429クォータ枯渇ループ遮断とモデルフォールバック刷新（2026-10-09 / R11）
+- **現象**: 実機ログにて、Gemini APIが429（RESOURCE_EXHAUSTED / QUOTA_EXCEEDED）を返した際、ファームウェアが即座に `STATE_WAIT_FOLLOWUP` に遷移し、マイクの環境音等で直ちに `isVoiceDetected()` が発火して2〜3秒間隔で連続再リクエスト（15秒間に4回）を送信し続ける無限ループが発生。これにより無料枠の毎分制限（RPM）を自ら超え続ける事態となっていた。
+- **回復タイミング**:
+  - **RPM (1分あたり制限)**: 連続送信ループ停止後、**約1〜2分** の待機でローリングウィンドウにより自動回復。
+  - **RPD (1日あたり制限)**: 日次枠を使い切った場合は、**米国太平洋時間 00:00 PT = 日本時間 16:00 JST（夏時間）/ 17:00 JST（標準時）** に全枠リセット。
+- **ファームウェア対策 (`main.cpp` & `GeminiClient.cpp`)**:
+  1. `!requestOk`（429やエラー時）は困惑チャイム音 `AudioTask::playChirp(false)` を鳴らし、再生完了後は `STATE_WAIT_FOLLOWUP` ではなく **`STATE_STANDBY_WAIT_KEYWORD`** へ遷移させて即時ループを完全遮断。
+  2. 再生後の追従待機クールダウンを600msから1200msへ拡張。
+  3. 標準モデルを実在する最新高速モデル `gemini-2.5-flash` に統一し、フォールバックチェーン（`gemini-2.0-flash` → `gemini-1.5-flash` → `gemini-flash-latest`）を整備。
+  4. 429検出時にシリアルへ回復目安時間を診断表示。
+
+### 5. ハードウェア給電（TAKAO v1.2 & SG90）とI2Sの留意事項
 - **給電経路**: TAKAO v1.2 の Grove CN2 pin3 とサーボ pin2 は同一の +5V ネット。
   - サーボ動作時はPC USBを外し、TAKAO外部USB電源（5V 2A以上）単独・SW1 ONで給電する。
   - PC USB書込み・シリアル監視時は、Groveコネクタを抜いてPC USB単独で接続する。

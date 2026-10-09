@@ -231,6 +231,7 @@ void setup() {
 }
 
 static uint32_t s_speechEndTimestamp = 0;
+static bool s_lastRequestSuccess = true;
 
 void loop() {
     M5.update();
@@ -324,15 +325,18 @@ void loop() {
                     );
                 }
 
-                if ((requestOk || AudioTask::isPlaying()) && AudioTask::isPlaying()) {
+                if (requestOk && AudioTask::isPlaying()) {
+                    s_lastRequestSuccess = true;
                     g_state = STATE_SPEAKING;
                 } else if (!requestOk) {
+                    s_lastRequestSuccess = false;
                     g_avatar.setEmotion(EMOTION_SAD);
                     if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SAD);
-                    g_state = STATE_WAIT_FOLLOWUP;
-                    AudioTask::resetSilenceTimer();
-                    s_speechEndTimestamp = millis();
+                    Serial.println("[State] Request failed or quota exceeded. Playing error chime...");
+                    AudioTask::playChirp(false); // 困惑・エラーを表現する下降トーン
+                    g_state = STATE_SPEAKING;
                 } else {
+                    s_lastRequestSuccess = true;
                     g_state = STATE_WAIT_FOLLOWUP;
                     AudioTask::resetSilenceTimer();
                     s_speechEndTimestamp = millis();
@@ -342,16 +346,21 @@ void loop() {
 
         case STATE_SPEAKING:
             if (!AudioTask::isPlaying()) {
-                Serial.println("[Speech] Audio playback finished. Transitioning to WAIT_FOLLOWUP.");
-                g_state = STATE_WAIT_FOLLOWUP;
+                if (s_lastRequestSuccess) {
+                    Serial.println("[Speech] Audio playback finished. Transitioning to WAIT_FOLLOWUP.");
+                    g_state = STATE_WAIT_FOLLOWUP;
+                } else {
+                    Serial.println("[Speech] Error chime finished. Returning to STANDBY (prevents rapid retry loop).");
+                    g_state = STATE_STANDBY_WAIT_KEYWORD;
+                }
                 AudioTask::resetSilenceTimer();
                 s_speechEndTimestamp = millis();
             }
             break;
 
         case STATE_WAIT_FOLLOWUP:
-            // スピーカー再生直後の600msクールダウン (スピーカー残響・マイク回り込みによる誤検知を遮断)
-            if (millis() - s_speechEndTimestamp > 600) {
+            // スピーカー再生直後の1200msクールダウン (スピーカー残響・マイク回り込みによる誤検知を遮断)
+            if (millis() - s_speechEndTimestamp > 1200) {
                 if (AudioTask::isVoiceDetected()) {
                     Serial.println("[Voice] Follow-up speech detected. Returning to LISTENING...");
                     g_state = STATE_LISTENING;
