@@ -1,0 +1,67 @@
+{
+  "client_date": "2026-10-25",
+  "scope": "host REST contract using fixed synthetic Japanese speech; no device/microphone",
+  "models": {
+    "stt": "gemini-3.1-flash-lite",
+    "reply": "gemini-3.8-flash",
+    "tts": "gemini-3.8-flash-lite-tts"
+  },
+  "stages": [
+    {
+      "request_bytes": 202,
+      "http_status": 200,
+      "ok": true,
+      "content_type": "application/json",
+      "response_bytes": 188099,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 70,
+        "totalTokenCount": 78
+      },
+      "elapsed_seconds": 0,
+      "stage": "fixture_tts",
+      "input_source": "verified_previous_synthetic_fixture",
+      "finish_reason": "STOP",
+      "audio_mime": "audio/wav",
+      "audio_bytes": 140516,
+      "sample_rate": 24000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_seconds": 2.8,
+      "sha256": "09d4ae3dac955925d63f086a9ff2826bb0e5520df3e63d81dc1a541b26b6ede5"
+    },
+    {
+      "request_bytes": 120002,
+      "http_status": 200,
+      "ok": true,
+      "content_type": "application/json",
+      "response_bytes": 896,
+      "usage": {
+        "promptTokenCount": 128,
+        "candidatesTokenCount": 27,
+        "totalTokenCount": 155
+      },
+      "elapsed_seconds": 3.189,
+      "stage": "stt",
+      "input_source": "synthetic_question_16k",
+      "finish_reason": "STOP",
+      "text_bytes": 72,
+      "transcript_bytes": 32,
+      "expected_question_match": true
+    },
+    {
+      "request_bytes": 583,
+      "http_status": null,
+      "ok": false,
+      "error_kind": "TimeoutError",
+      "elapsed_seconds": 45.162,
+      "stage": "reply",
+      "input_source": "stt_result",
+      "answer_characters": 0,
+      "expected_answer_five": false
+    }
+  ],
+  "source_report": "C:\\Users\\thoma\\SynologyDrive\\H\\Doc\\Src\\Codex\\projects\\ai-stackchan\\m5stack-cores3-gemini-stackchan\\docs\\validation\\r13-api-20261025-210943\\report.json",
+  "total_seconds": 48.364,
+  "pipeline_pass": false
+}
