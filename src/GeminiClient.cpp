@@ -1,10 +1,12 @@
 #include "GeminiClient.h"
 #include "ConversationRules.h"
+#include "ReplyRetry.h"
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <WiFi.h>
 #include <esp_heap_caps.h>
+#include <esp_system.h>
 #include <mbedtls/base64.h>
 #include <memory>
 #include <algorithm>
@@ -33,6 +35,7 @@ conversation::WavView audioView;
 AvatarEmotion currentEmotion = EMOTION_NORMAL;
 const char* failure = "";
 uint32_t retryAfter = 0;
+bool automaticRetryHeaderValid = true;
 constexpr size_t MaxBody = 1400000;
 
 class Sink : public Stream {
@@ -47,8 +50,11 @@ class Sink : public Stream {
     int available() override { return 0; } int read() override { return -1; }
     int peek() override { return -1; } void flush() override {}
 };
-bool post(const char* model, JsonDocument& request, JsonDocument& response, size_t cap) {
+bool post(const char* model, JsonDocument& request, JsonDocument& response, size_t cap, uint32_t timeoutMs = 15000) {
     if (cancelled.load()) return false;
+    httpCode.store(0);
+    automaticRetryHeaderValid = true;
+    const uint32_t attemptStarted = millis();
     if (WiFi.status() != WL_CONNECTED) { failure = "WiFi disconnected"; return false; }
     if (time(nullptr) < 1700000000) { failure = "Clock not synchronized"; return false; }
     if (request.overflowed()) { failure = "Request memory unavailable"; return false; }
@@ -56,19 +62,25 @@ bool post(const char* model, JsonDocument& request, JsonDocument& response, size
     if (!payload) { failure = "Request memory unavailable"; return false; }
     serializeJson(request, (char*)payload.get(), length + 1);
     WiFiClientSecure tls; tls.setCACert((const char*)googleRoots);
-    tls.setHandshakeTimeout(8);
-    HTTPClient http; http.setConnectTimeout(8000); http.setTimeout(15000); http.setReuse(false);
+    tls.setHandshakeTimeout(std::min(uint32_t(8), (timeoutMs + 999) / 1000));
+    HTTPClient http; http.setConnectTimeout(std::min(uint32_t(8000), timeoutMs));
+    http.setTimeout(uint16_t(std::min(uint32_t(15000), timeoutMs))); http.setReuse(false);
     String url = String("https://generativelanguage.googleapis.com/v1beta/models/") + model + ":generateContent";
     if (!http.begin(tls, url)) { failure = "TLS setup failed"; return false; }
     http.addHeader("Content-Type", "application/json"); http.addHeader("x-goog-api-key", key);
     const char* headers[] = {"Retry-After", "Content-Type"}; http.collectHeaders(headers, 2);
     int code = http.POST(payload.get(), length); payload.reset(); httpCode.store(code);
-    Serial.printf("[API] stage=%d status=%d\n", int(state.load()), code);
+    Serial.printf("[API] stage=%d status=%d elapsed_ms=%u\n", int(state.load()), code, unsigned(millis() - attemptStarted));
     if (cancelled.load()) { http.end(); return false; }
     if (code != 200) {
-        int wait = http.header("Retry-After").toInt();
+        String retryHeader = http.header("Retry-After"); retryHeader.trim();
+        for (size_t i = 0; i < retryHeader.length(); ++i)
+            if (retryHeader[i] < '0' || retryHeader[i] > '9') automaticRetryHeaderValid = false;
+        int wait = 0;
+        if (automaticRetryHeaderValid) for (size_t i = 0; i < retryHeader.length(); ++i)
+            wait = std::min(3600, wait * 10 + retryHeader[i] - '0');
         retryAfter = millis() + uint32_t(std::min(3600, std::max(code == 429 ? 60 : 2, wait))) * 1000;
-        failure = code == 429 ? "Free quota reached; retry later" : code == 403 ? "API access denied" : code == 404 ? "Model unavailable" : "API request failed";
+        failure = code == 503 ? "Gemini temporarily overloaded; retry later" : code == 429 ? "Free quota reached; retry later" : code == 403 ? "API access denied" : code == 404 ? "Model unavailable" : "API request failed";
         http.end(); return false;
     }
     if (!http.header("Content-Type").startsWith("application/json")) { http.end(); failure = "Unexpected response type"; return false; }
@@ -81,6 +93,8 @@ bool post(const char* model, JsonDocument& request, JsonDocument& response, size
     if (count < 0 || sink.failed || !sink.used || (expected >= 0 && sink.used != size_t(expected)) ||
         deserializeJson(response, (const char*)sink.data.get(), sink.used)) { failure = "Incomplete API response"; return false; }
     if (response.overflowed() || response["error"].is<JsonObject>()) { failure = "Invalid API response"; return false; }
+    retryAfter = 0;
+    failure = "";
     return true;
 }
 bool completeCandidate(JsonDocument& response) {
@@ -94,6 +108,30 @@ String textResult(JsonDocument& response) {
         if (!(part["thought"] | false) && part["text"].is<const char*>()) text += part["text"].as<const char*>();
     text.trim(); return text;
 }
+struct ReplyTransport {
+    JsonDocument& request;
+    JsonDocument& response;
+    uint32_t began;
+    ReplyTransport(JsonDocument& req, JsonDocument& res) : request(req), response(res), began(millis()) { }
+    bool attempt() {
+        const uint32_t elapsed = millis() - began;
+        if (elapsed >= replyretry::RetryStartBudgetMs) return false;
+        response.clear();
+        return post("gemini-3.8-flash", request, response, 16000, replyretry::RetryStartBudgetMs - elapsed);
+    }
+    int status() const { return httpCode.load(); }
+    uint32_t nowMillis() const { return millis(); }
+    uint32_t retryWaitMs() const { return automaticRetryHeaderValid ? GeminiClient::retryWaitMs() : replyretry::MaxAutomaticWaitMs + 1; }
+    uint32_t jitterMs() const { return esp_random() % 501; }
+    bool cancelled() const { return ::cancelled.load(); }
+    void onRetry() { state.store(GeminiClient::ReplyRetry); }
+    bool wait(uint32_t duration) {
+        Serial.printf("[API] reply_retry_wait_ms=%u\n", unsigned(duration));
+        uint32_t start = millis();
+        while (millis() - start < duration) { if (cancelled()) return false; vTaskDelay(pdMS_TO_TICKS(20)); }
+        return !cancelled();
+    }
+};
 void textConfig(JsonDocument& request, int maxTokens) {
     request["generationConfig"]["responseMimeType"] = "application/json";
     request["generationConfig"]["maxOutputTokens"] = maxTokens;
@@ -119,7 +157,7 @@ bool GeminiClient::start(const int16_t* pcm, size_t samples, const String& now) 
 bool GeminiClient::retry() {
     if (busy()) return false;
     if (key.isEmpty() || (transcript.isEmpty() && (!input || inputCount < 3200))) { failure = "Audio or API key missing"; state.store(Failed); return false; }
-    if (retryAfter && int32_t(millis() - retryAfter) < 0) { failure = "Please wait before retry"; state.store(Failed); return false; }
+    if (retryWaitMs()) { failure = "Please wait before retry"; state.store(Failed); return false; }
     cancelled.store(false); failure = ""; httpCode.store(0); running.store(true);
     state.store(transcript.isEmpty() ? STT : reply.isEmpty() ? Reply : TTS);
     if (xTaskCreatePinnedToCore(worker, "GeminiFile", 16384, nullptr, 1, nullptr, 0) != pdPASS) {
@@ -170,7 +208,8 @@ void GeminiClient::worker(void*) {
         }
         request["contents"][at]["role"] = "user"; request["contents"][at]["parts"][0]["text"] = transcript;
         textConfig(request, 2048);
-        ok = post("gemini-3.8-flash", request, response, 16000);
+        ReplyTransport transport{request, response};
+        ok = replyretry::execute(transport);
         if (ok) {
             JsonDocument result(&allocator); ok = !deserializeJson(result, textResult(response));
             if (ok) {
@@ -220,7 +259,8 @@ GeminiClient::Stage GeminiClient::stage() { return state.load(); }
 int GeminiClient::httpStatus() { return httpCode.load(); }
 uint32_t GeminiClient::retryWaitMs() {
     int32_t wait = int32_t(retryAfter - millis());
-    return retryAfter && wait > 0 ? uint32_t(wait) : 0;
+    if (retryAfter && wait > 0) return uint32_t(wait);
+    retryAfter = 0; return 0;
 }
 const char* GeminiClient::error() { return busy() ? "" : failure; }
 bool GeminiClient::hasTranscript() { return transcribed.load(); }

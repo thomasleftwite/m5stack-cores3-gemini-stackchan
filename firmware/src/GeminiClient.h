@@ -4,7 +4,7 @@
 #include "StackChanAvatar.h"
 class GeminiClient {
  public:
-    enum Stage { Idle, STT, Reply, TTS, Complete, Failed, Cancelled };
+    enum Stage { Idle, STT, Reply, TTS, Complete, Failed, Cancelled, ReplyRetry };
     static void init(const String& apiKey, const String& unusedModel, const String& voice);
     static bool start(const int16_t* pcm, size_t samples, const String& dateTime);
     static bool retry();

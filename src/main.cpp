@@ -168,14 +168,24 @@ static String stageText() {
     switch (GeminiClient::stage()) {
         case GeminiClient::STT: return "音声を認識しています";
         case GeminiClient::Reply: return "返事を考えています";
+        case GeminiClient::ReplyRetry: return "混雑のため、もう一度問い合わせています";
         case GeminiClient::TTS: return "声を作っています";
         default: return "処理しています";
     }
 }
+static String requestErrorText() {
+    const int code = GeminiClient::httpStatus();
+    if (code == 503) return "Geminiが混雑中です。少し待って再試行";
+    if (code == 429) return "無料枠の上限です。しばらくお待ちください";
+    if (code == 401 || code == 403) return "APIキーと利用権限を確認してください";
+    if (code == 404) return "指定モデルが利用できません";
+    if (code <= 0) return "通信が完了しませんでした。接続を確認";
+    return "応答を確認できません。再試行できます";
+}
 void setup() {
     auto cfg = M5.config(); cfg.serial_baudrate = 115200; cfg.internal_spk = true; cfg.internal_mic = true;
     M5.begin(cfg);
-    Serial.println("[System] CoreS3 file conversation R13");
+    Serial.println("[System] CoreS3 file conversation R13.1");
     if (!ConfigManager::load(g_config)) {
         M5.Display.println("Settings storage unavailable; no automatic format.");
         while (true) delay(100);
@@ -290,7 +300,7 @@ void loop() {
         if (mode == Mode::Setting) drawMenu("設定", "ウェイクワード登録 / 更新", notice.isEmpty() ? "同じ人が同じ呼びかけを3回録音" : notice);
         else if (mode == Mode::Enroll) drawMenu("呼びかけの登録", String(wake.enrollmentCount() + 1) + " / 3  同じ言葉を話してください", notice);
         else if (mode == Mode::MicError) drawMenu("録音できませんでした", "マイクを再準備", notice);
-        else if (mode == Mode::Error) drawMenu("応答できませんでした", "失敗した処理から再試行", notice.isEmpty() ? (GeminiClient::httpStatus() == 429 ? "無料枠の上限です。しばらくお待ちください" : "設定・接続を確認してください") : notice);
+        else if (mode == Mode::Error) drawMenu("応答できませんでした", "失敗した処理から再試行", notice.isEmpty() ? requestErrorText() : notice);
         else {
             String status = mode == Mode::Ready ? (notice.isEmpty() ? (wake.registered() ? "呼びかけを待っています" : "設定から呼びかけを登録してください") : notice) :
                 mode == Mode::Cue ? "合図の後に話してください" : mode == Mode::Recording ? "録音中 / タッチで中止" :

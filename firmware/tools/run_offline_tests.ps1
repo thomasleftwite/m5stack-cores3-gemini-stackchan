@@ -23,3 +23,11 @@ $buildCommand = '"{0}" >nul && cl /nologo /std:c++17 /utf-8 /EHsc /W4 /I"{1}" /F
 if ($LASTEXITCODE -ne 0) { throw 'Storage tests did not compile' }
 & $storageExe
 if ($LASTEXITCODE -ne 0) { throw 'Storage tests failed' }
+$retrySource = Join-Path $projectDir 'tests/reply_retry.cpp'
+$retryExe = Join-Path $outDir 'reply_retry.exe'
+$retryObj = Join-Path $outDir 'reply_retry.obj'
+$buildCommand = '"{0}" >nul && cl /nologo /std:c++17 /utf-8 /EHsc /W4 /Fe:"{1}" /Fo:"{2}" "{3}"' -f $vcvars,$retryExe,$retryObj,$retrySource
+& cmd.exe /d /s /c $buildCommand
+if ($LASTEXITCODE -ne 0) { throw 'Reply retry tests did not compile' }
+& $retryExe
+if ($LASTEXITCODE -ne 0) { throw 'Reply retry tests failed' }
