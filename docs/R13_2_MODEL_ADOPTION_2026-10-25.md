@@ -32,6 +32,8 @@ python -B tools/validate_r13_api.py --run --resume docs/validation/r13-api-20261
 
 ## 実機導入の条件
 
+後続の調査・設計決定（2026-10-25）: 本体表は標準app3M_fat9M_16MB.csvと完全一致。アプリ3MiB×2/FAT9.875MiBの既存配置を選定した。成果物はdocs/STORAGE_LAYOUT_DIAGNOSIS_2026-10-25.mdとdesign/cores3_16mb_app3m_fat9m.csv。FAT互換実装と実機検証は引き続き未実施。
+
 COM10の公開パーティション表はapp0=0x10000/0x300000、ffat=0x610000/0x9e0000であり、ビルドのdefault_16MB.csvと一致しない。
 現行はLittleFSのみを使用する。ラベルだけでは既存データのファイルシステムを確定できないため、無条件のFFatマウント/フォーマットへの置換は行わない。
 既存の設定・登録データを保持する互換対応と書込み範囲を用意してから実機へ導入する。通常uploadはパーティション表を含むため、現時点では実施しない。

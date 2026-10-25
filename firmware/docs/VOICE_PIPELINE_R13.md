@@ -8,6 +8,7 @@
 - PC中継なしで端末からGemini APIへ接続。無料枠でSTT、回答生成、TTSを別リクエストにする。
 - R13.2（2026-10-25採用承認）: STT `gemini-3.1-flash-lite`、回答 `gemini-3.5-flash-lite`、TTS `gemini-3.8-flash-lite-tts`。有料への自動切替なし。
 - モデルはfirmware/src/GeminiModels.hで固定する。互換用のconfig.jsonのgemini_modelは選択に使用せず、旧値があっても上記モデルを使う。既存設定ファイルを書き直さず適用する。
+- 保存領域の選定（2026-10-25）: アプリ3MiB×2、FAT9.875MiB、現在の本体と同じ配置を維持する。会話音声はPSRAM一時保持を維持する。これは設計決定であり、現在のビルド設定/LittleFS実装は未変更。案件ルートのdocs/STORAGE_LAYOUT_DIAGNOSIS_2026-10-25.mdと選定CSVを参照し、FAT互換対応後に導入する。
 - 録音WAVは16kHz/16bit/mono、上限15秒（PCM480000バイト、WAV480044バイト、Base64約640060バイト）。
 - 発話開始を5秒待つ。開始後1秒の無音、または上限15秒で終了。無音は送信しない。
 - STTは忠実な文字起こしのみ。無音・認識不能は回答生成へ進めない。認識文を回答生成へ渡す。
@@ -72,4 +73,6 @@
 - [x] オフラインテスト・ビルド・型検査（2026-10-25）。成果物: firmware/tests/、firmware/.pio/build/m5stack-cores3/firmware.bin。詳細はR13_VALIDATION.md。
 - [x] 回答3.5 Flash-Lite採用承認と実装（2026-10-25）。成果物: firmware/src/GeminiModels.h等。PC側STT→回答→TTS成功はR13_MODEL_COMPARISON_2026-10-25.md、採用後の検証はR13_2_MODEL_ADOPTION_2026-10-25.md。
 - [ ] ユーザープロジェクトの無料枠残量・連続利用上限と実機API統合検証。PC側成功と分けて確認する。
+- [x] 保存域不一致の原因調査と容量配分の決定（2026-10-25）。成果物: docs/STORAGE_LAYOUT_DIAGNOSIS_2026-10-25.md、docs/design/cores3_16mb_app3m_fat9m.csv、docs/validation/storage-layout-20261025/report.json。MD5/標準CSV一致/選定表の一致をPC検証。
+- [ ] 選定した保存域へのFAT互換対応・書込み前照合・データ保持検証。
 - [ ] CoreS3録音・3回登録・照合・再生・タッチ・電源断・総遅延の実機検証（未実施、承認待ち）。

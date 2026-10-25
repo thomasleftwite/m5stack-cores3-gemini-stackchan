@@ -1,5 +1,7 @@
 # Gemini空応答の診断・修正 R03
 
+2026-10-25訂正: 本記録中の「通常uploadはコードだけを更新」は不正確。この案件の固定版PlatformIO標準uploadはブートローダー・領域表・起動選択データも書き込む。現在の本体とビルドは領域配置が異なるため、upload/uploadfsをそのまま実行しない。調査・保存域の選定・データ保持方針は[保存領域調査](docs/STORAGE_LAYOUT_DIAGNOSIS_2026-10-25.md)を参照。以下の過去検証結果は保持する。
+
 日付: 2026-10-09（日本時間）
 目的: TLS接続後に空のStream completeを成功扱いする問題を修正する。
 対象: CoreS3 Lite / ESP32-S3 / COM10 / PlatformIO m5stack-cores3。
