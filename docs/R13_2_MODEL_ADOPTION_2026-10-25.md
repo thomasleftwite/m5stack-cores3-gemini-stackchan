@@ -23,6 +23,7 @@ firmware/platformio.ini: espressif32@6.5.0 / board esp32s3box、M5Unified0.1.17�
 ./firmware/tools/run_offline_tests.ps1
 node tools/sync_firmware_sources.mjs
 node node_modules/typescript/bin/tsc --noEmit --incremental false
+node tools/test_live_config_errors.mjs
 # firmware/で実行。uploadは付けない
 platformio run -e m5stack-cores3
 # 案件ルートで実行。既定モデル3.5、各段階の待機15秒
@@ -41,7 +42,7 @@ COM10の公開パーティション表はapp0=0x10000/0x300000、ffat=0x610000/0
 - [x] モデル選定承認とソース反映（2026-10-25）。成果物: firmware/src/GeminiModels.h、GeminiClient.cpp、ConfigManager.h、lib/gemini-models.ts等。
 - [x] オフラインテスト・型検査・PlatformIOビルド成功（2026-10-25）。録音/WAV/照合・3回登録保存・503上限/取消の既存全テスト成功。配布40ファイルと正本一致。
 - [x] 採用後の既定値によるSTT→回答→TTS実API確認（2026-10-25）。成果物: docs/validation/r13-api-20261025-225254/report.jsonとsynthetic-reply.wav。
-- [ ] 差分の仕様・規約レビュー。
+- [x] 差分の仕様・規約レビュー（2026-10-25）。表示1件・検証ツールの例外処理1件を修正、両側で再確認済み。以下に記録。
 - [ ] 既存保存領域を保持した実機導入、実機会話・ウェイク・sleep/touch確認。
 
 本記録: C:/Users/thoma/SynologyDrive/H/Doc/Src/Codex/projects/ai-stackchan/m5stack-cores3-gemini-stackchan/docs/R13_2_MODEL_ADOPTION_2026-10-25.md。
@@ -70,3 +71,17 @@ COM10の公開パーティション表はapp0=0x10000/0x300000、ffat=0x610000/0
 依存ライブラリ内の既存警告が出るが、今回のソース変更にコンパイルエラーはない。
 Python2ツール・Liveツールの構文検査、差分形式、追跡/未除外成果物148ファイルのローカルキー一致0件、実設定のGit除外・未追跡を確認。
 既存ユーザー変更（READMEのNode.js要件、package.json、bun.lock、.nvmrc）は保持し、今回のコミットに含めない。
+
+## Spec
+
+レビュー範囲: `git diff 0128f84...3ab0b60` と後続修正。
+Web上部の回答モデル表示が旧3.8のままというP3指摘1件。app/page.tsxの表示をREPLY_MODELへ変更し、型検査・仕様側再確認で解消。
+STT/回答/TTS、設定非書換え、503制御と実機未検証の区別に機能上の指摘なし。
+
+## Standards
+
+Live検証ツールの初期化時に、不正な設定JSONの入力断片を未捕捉例外が出す可能性があるP2指摘1件。
+ローカル初期化を固定エラーのみを出す例外境界に含め、キー欠落・型不正も接続前に拒否した。実際のキーの漏えいを検出したものではない。
+ダミー値だけで変更前の漏えい経路を再現し、変更後は不正JSON/読取り失敗/キー欠落/型不正の4件で、stderr空・固定JSONのみ・終了1を確認。
+回帰検査tools/test_live_config_errors.mjsは設定読取りをメモリ内で差し替え、ネットワーク/書込みを禁止する。実configやAPIへアクセスしない。
+品質側再確認で指摘解消、新たな具体的不具合なし。規約側1件・仕様側1件は解消済みで、両側とも未解決0件。

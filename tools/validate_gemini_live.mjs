@@ -8,10 +8,14 @@ import { performance } from 'node:perf_hooks';
 const require = createRequire(import.meta.url);
 const WebSocket = require('ws');
 const root = fileURLToPath(new URL('../', import.meta.url));
+// JSON parse/read errors can contain source fragments. Keep initialization inside
+// this sanitized boundary as well as the asynchronous API response handlers.
+try {
 const mode = process.argv[2];
 if (!['text', 'audio'].includes(mode)) { console.log('Usage: node tools/validate_gemini_live.mjs text|audio'); process.exit(2); }
 const config = JSON.parse(fs.readFileSync(path.join(root, 'firmware/data/config.json'), 'utf8').replace(/^\uFEFF/, ''));
 const key = config.gemini_api_key;
+if (typeof key !== 'string' || !key.trim() || key.includes('YOUR_')) throw Error('LocalKeyUnavailable');
 const question = '二足す三はいくつですか。';
 const started = performance.now();
 const seconds = from => Number(((performance.now() - from) / 1000).toFixed(3));
@@ -148,4 +152,8 @@ try {
   ws.on('close', (code) => { if (!done) { report.close_code = code; finish('ClosedBeforeComplete'); } });
 } catch (error) {
   finish(error?.message === 'FixtureMismatch' ? 'FixtureMismatch' : 'LocalSetupError');
+}
+} catch {
+  console.log(JSON.stringify({ ok: false, error_kind: 'LocalSetupError' }));
+  process.exitCode = 1;
 }

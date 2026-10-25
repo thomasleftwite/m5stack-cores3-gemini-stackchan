@@ -341,7 +341,7 @@ export default function HomePage() {
           <div className="flex flex-wrap gap-2 items-center text-xs">
             <span className="px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono font-medium flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-cyan-400" />
-              Gemini 3.8 Flash & Gemini 3.8 Flash Lite TTS
+              {REPLY_MODEL} & Gemini 3.8 Flash-Lite TTS
             </span>
             <span className="px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono font-medium flex items-center gap-1">
               <Cpu className="w-3 h-3 text-emerald-400" />
