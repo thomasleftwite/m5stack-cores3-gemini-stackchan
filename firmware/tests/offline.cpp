@@ -1,11 +1,44 @@
 #include "../src/ConversationRules.h"
 #include "../src/LocalWakeCore.h"
+#include "../src/QueuedMicFrames.h"
 #include <assert.h>
 #include <vector>
 #include <stdio.h>
 #include <limits>
+#include <deque>
+struct DelayedMic {
+    std::deque<int16_t*> pending;
+    int16_t completed = 0;
+    bool reject = false;
+    // Simulates notification before recording starts: no buffer is filled until
+    // the third enqueue blocks for a free slot. The old isRecording loop misses it.
+    bool record(int16_t* destination, size_t count, uint32_t rate) {
+        assert(count == 320 && rate == 16000);
+        if (reject) return false;
+        if (pending.size() == 2) {
+            ++completed; auto out = pending.front(); pending.pop_front();
+            for (int i = 0; i < 320; ++i) out[i] = completed;
+        }
+        pending.push_back(destination); return true;
+    }
+};
 int main() {
+    QueuedMicFrames micFrames; DelayedMic microphone; int16_t completeFrame[320];
+    for (int n = 1; n <= 12; ++n) {
+        assert(micFrames.read(microphone, completeFrame));
+        for (auto sample : completeFrame) assert(sample == n);
+    }
+    microphone.pending.clear(); micFrames.reset();
+    assert(micFrames.read(microphone, completeFrame) && completeFrame[0] == 13);
+    microphone.reject = true; assert(!micFrames.read(microphone, completeFrame));
     using namespace conversation;
+    auto retryAt = retryDeadline(100, 60000);
+    assert(!deadlineReached(60100, retryAt)); // 429 retry window still retains STT/reply.
+    assert(!deadlineReached(90099, retryAt));
+    assert(deadlineReached(90100, retryAt));
+    retryAt = retryDeadline(0xfffffff0u, 60000);
+    assert(!deadlineReached(uint32_t(0xfffffff0u + 60000), retryAt));
+    assert(deadlineReached(uint32_t(0xfffffff0u + 90000), retryAt));
     CaptureGate gate; gate.reset(100);
     assert(gate.update(5099, false) == CaptureGate::Waiting);
     assert(gate.update(5100, false) == CaptureGate::Empty);

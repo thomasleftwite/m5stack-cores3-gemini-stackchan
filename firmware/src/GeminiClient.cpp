@@ -21,6 +21,7 @@ using Buffer = std::unique_ptr<uint8_t, Free>;
 Buffer buffer(size_t n) { return Buffer((uint8_t*)allocator.allocate(n)); }
 std::atomic<GeminiClient::Stage> state{GeminiClient::Idle};
 std::atomic<bool> running{false}, cancelled{false}, transcribed{false};
+std::atomic<bool> newQuestion{false};
 std::atomic<int> httpCode{0};
 const int16_t* input = nullptr;
 size_t inputCount = 0;
@@ -153,7 +154,7 @@ void GeminiClient::worker(void*) {
                         ok = String(result["status"] | "") == "ok" && !transcript.isEmpty() && transcript.length() <= 4096;
                         if (ok) transcribed.store(true);
                     }
-                    if (!ok) { transcript = ""; failure = "Speech unclear; please ask again"; }
+                    if (!ok) { transcript = ""; newQuestion.store(true); failure = "Speech unclear; please ask again"; }
                 }
             }
         }
@@ -217,13 +218,19 @@ void GeminiClient::cancel() { cancelled.store(true); }
 bool GeminiClient::busy() { return running.load(); }
 GeminiClient::Stage GeminiClient::stage() { return state.load(); }
 int GeminiClient::httpStatus() { return httpCode.load(); }
+uint32_t GeminiClient::retryWaitMs() {
+    int32_t wait = int32_t(retryAfter - millis());
+    return retryAfter && wait > 0 ? uint32_t(wait) : 0;
+}
 const char* GeminiClient::error() { return busy() ? "" : failure; }
 bool GeminiClient::hasTranscript() { return transcribed.load(); }
+bool GeminiClient::needsNewQuestion() { return newQuestion.load(); }
 const int16_t* GeminiClient::audio(size_t* count) { *count = audioView.bytes / 2; return receivedAudio ? (const int16_t*)(receivedAudio.get() + audioView.offset) : nullptr; }
 AvatarEmotion GeminiClient::emotion() { return currentEmotion; }
 void GeminiClient::clear(bool clearHistory) {
     if (busy()) return;
     receivedAudio.reset(); audioView = {}; transcript = ""; reply = ""; transcribed.store(false);
+    newQuestion.store(false);
     input = nullptr; inputCount = 0; dateTime = ""; cancelled.store(false); state.store(Idle); failure = "";
     if (clearHistory) { for (unsigned i = 0; i < 3; ++i) { historyUser[i] = ""; historyReply[i] = ""; } historyCount = 0; }
 }

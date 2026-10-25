@@ -7,6 +7,8 @@ constexpr uint32_t InputRate = 16000, OutputRate = 24000;
 constexpr size_t InputSamples = InputRate * 15, MaxOutputBytes = OutputRate * 2 * 20;
 constexpr uint32_t IdleMs = 180000, StartWaitMs = 5000, EndSilenceMs = 1000;
 inline uint32_t elapsed(uint32_t now, uint32_t then) { return now - then; }
+inline uint32_t retryDeadline(uint32_t now, uint32_t waitMs) { return now + waitMs + 30000; }
+inline bool deadlineReached(uint32_t now, uint32_t deadline) { return int32_t(now - deadline) >= 0; }
 struct CaptureGate {
     uint32_t start = 0, lastVoice = 0, voicedMs = 0; bool heard = false;
     void reset(uint32_t now) { start = lastVoice = now; voicedMs = 0; heard = false; }

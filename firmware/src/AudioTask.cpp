@@ -2,6 +2,7 @@
 #include <esp_heap_caps.h>
 #include <math.h>
 #include <algorithm>
+#include "QueuedMicFrames.h"
 namespace {
 int16_t* recording = nullptr;
 size_t used = 0;
@@ -12,6 +13,7 @@ const int16_t* playback = nullptr;
 size_t playbackCount = 0, position = 0;
 int16_t speakerBuffers[4][960];
 unsigned speakerBuffer = 0;
+QueuedMicFrames micFrames;
 }
 bool AudioTask::init(uint8_t gain, uint8_t level) {
     volume = level;
@@ -24,16 +26,12 @@ bool AudioTask::init(uint8_t gain, uint8_t level) {
 bool AudioTask::setMicEnabled(bool enabled) {
     if (enabled == mic) return true;
     if (enabled) { if (playing) return false; M5.Speaker.end(); mic = M5.Mic.begin(); }
-    else { M5.Mic.end(); mic = false; voiced = false; rms = 0; }
+    else { M5.Mic.end(); micFrames.reset(); mic = false; voiced = false; rms = 0; }
     return enabled == mic;
 }
 bool AudioTask::readFrame(int16_t* frame) {
-    if (!mic || !M5.Mic.record(frame, 320, 16000)) return false;
-    uint32_t start = millis();
-    while (M5.Mic.isRecording()) {
-        if (millis() - start > 250) { setMicEnabled(false); return false; }
-        delay(1);
-    }
+    if (!mic) return false;
+    if (!micFrames.read(M5.Mic, frame)) { setMicEnabled(false); return false; }
     int64_t mean = 0; for (int i = 0; i < 320; ++i) mean += frame[i]; mean /= 320;
     double energy = 0; for (int i = 0; i < 320; ++i) { double v = frame[i] - mean; energy += v*v; }
     float raw = sqrt(energy / 320); rms = raw / 8000;

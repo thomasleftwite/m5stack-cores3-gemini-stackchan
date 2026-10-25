@@ -12,8 +12,10 @@ class GeminiClient {
     static bool busy();
     static Stage stage();
     static int httpStatus();
+    static uint32_t retryWaitMs();
     static const char* error();
     static bool hasTranscript();
+    static bool needsNewQuestion();
     static const int16_t* audio(size_t* samples);
     static AvatarEmotion emotion();
     static void clear(bool clearHistory = false);

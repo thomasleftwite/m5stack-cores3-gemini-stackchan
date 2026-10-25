@@ -112,13 +112,15 @@ static String getFormattedJSTTime() {
 }
 
 
-enum class Mode { Ready, Sleep, Setting, Enroll, Cue, Recording, Busy, Speaking, Error };
+enum class Mode { Ready, Sleep, Setting, Enroll, Cue, Recording, Busy, Speaking, Error, MicError };
 AppConfig g_config;
 StackChanAvatar g_avatar;
 LocalWake wake;
 Mode mode = Mode::Ready;
 conversation::CaptureGate gate;
 uint32_t lastActivity = 0, entered = 0, lastDraw = 0;
+uint32_t errorDeadline = 0;
+Mode micResume = Mode::Ready;
 bool touching = false, cancelRequested = false;
 String notice;
 int16_t frame[320];
@@ -141,6 +143,16 @@ static void sleepNow() {
 }
 static void enterSetting() {
     wake.resetDetection(); AudioTask::setMicEnabled(false); mode = Mode::Setting;
+}
+static void microphoneError(Mode resume) {
+    AudioTask::stopRecording(); AudioTask::setMicEnabled(false);
+    AudioTask::clearRecording();
+    micResume = resume; mode = Mode::MicError; notice = "マイクを再準備してください";
+}
+static void requestError() {
+    mode = Mode::Error; entered = millis(); notice = "";
+    errorDeadline = conversation::retryDeadline(entered, GeminiClient::retryWaitMs());
+    setEmotion(EMOTION_SAD);
 }
 static void drawMenu(const String& title, const String& action, const String& detail) {
     M5.Display.fillScreen(0x18E3); M5.Display.setFont(&fonts::efontJA_16);
@@ -201,6 +213,13 @@ void loop() {
                 } else if (y >= 180) ready();
                 break;
             case Mode::Enroll: if (y >= 180) ready("登録を中止しました"); break;
+            case Mode::MicError:
+                if (y >= 85 && y <= 145) {
+                    if (AudioTask::setMicEnabled(true)) {
+                        wake.resetDetection(); mode = micResume; entered = lastActivity = millis(); notice = "";
+                    }
+                } else if (y >= 180) ready();
+                break;
             case Mode::Busy: cancelRequested = true; GeminiClient::cancel(); break;
             case Mode::Error:
                 if (y >= 85 && y <= 145) {
@@ -212,18 +231,21 @@ void loop() {
         }
         lastDraw = 0;
     }
+    now = millis(); // A transition may have advanced entered/lastActivity during I2S setup.
     AudioTask::servicePlayback();
     if (mode == Mode::Ready) {
         if (now - lastActivity >= conversation::IdleMs) sleepNow();
-        else if (wake.registered() && now - entered >= 1200 && AudioTask::readFrame(frame)) {
-            if (wake.detect(frame, AudioTask::isVoiceDetected())) {
+        else if (wake.registered() && now - entered >= 1200) {
+            if (!AudioTask::readFrame(frame)) microphoneError(Mode::Ready);
+            else if (wake.detect(frame, AudioTask::isVoiceDetected())) {
                 lastActivity = now; wake.resetDetection();
                 if (AudioTask::playCue()) mode = Mode::Cue;
                 else ready("開始音を再生できません");
             }
         }
     } else if (mode == Mode::Enroll) {
-        if (AudioTask::readFrame(frame)) {
+        if (!AudioTask::readFrame(frame)) microphoneError(Mode::Enroll);
+        else {
             int result = wake.enroll(frame, AudioTask::isVoiceDetected());
             if (result == 2) ready("呼びかけを保存しました");
             else if (result == -2) ready("保存できません。旧登録を保持");
@@ -234,7 +256,7 @@ void loop() {
         if (!AudioTask::setMicEnabled(true)) ready("マイクの準備に失敗しました");
         else { AudioTask::startRecording(); gate.reset(millis()); mode = Mode::Recording; }
     } else if (mode == Mode::Recording) {
-        if (!AudioTask::readFrame(frame)) ready("録音に失敗しました");
+        if (!AudioTask::readFrame(frame)) microphoneError(Mode::Ready);
         else {
             auto result = gate.update(millis(), AudioTask::isVoiceDetected());
             if (result != conversation::CaptureGate::Waiting || AudioTask::recordingFull()) {
@@ -244,7 +266,7 @@ void loop() {
                     size_t samples = 0; const int16_t* pcm = AudioTask::getRecordedPCM(&samples);
                     cancelRequested = false;
                     if (GeminiClient::start(pcm, samples, getFormattedJSTTime())) { mode = Mode::Busy; entered = millis(); setEmotion(EMOTION_THINKING); }
-                    else { mode = Mode::Error; entered = millis(); notice = ""; }
+                    else requestError();
                 }
             }
         }
@@ -257,15 +279,17 @@ void loop() {
                 setEmotion(GeminiClient::emotion());
                 if (AudioTask::playPCM(audio, samples)) mode = Mode::Speaking;
                 else ready("音声を再生できません");
-            } else { mode = Mode::Error; entered = millis(); notice = ""; setEmotion(EMOTION_SAD); }
+            } else if (GeminiClient::needsNewQuestion()) ready("聞き取れません。もう一度呼びかけてください");
+            else requestError();
         }
     } else if (mode == Mode::Speaking && !AudioTask::isPlaying()) ready();
-    else if (mode == Mode::Error && now - entered >= 30000) ready("処理を終了しました");
+    else if (mode == Mode::Error && conversation::deadlineReached(now, errorDeadline)) ready("処理を終了しました");
 
     if (mode != Mode::Sleep && millis() - lastDraw >= 50) {
         lastDraw = millis();
         if (mode == Mode::Setting) drawMenu("設定", "ウェイクワード登録 / 更新", notice.isEmpty() ? "同じ人が同じ呼びかけを3回録音" : notice);
         else if (mode == Mode::Enroll) drawMenu("呼びかけの登録", String(wake.enrollmentCount() + 1) + " / 3  同じ言葉を話してください", notice);
+        else if (mode == Mode::MicError) drawMenu("録音できませんでした", "マイクを再準備", notice);
         else if (mode == Mode::Error) drawMenu("応答できませんでした", "失敗した処理から再試行", notice.isEmpty() ? (GeminiClient::httpStatus() == 429 ? "無料枠の上限です。しばらくお待ちください" : "設定・接続を確認してください") : notice);
         else {
             String status = mode == Mode::Ready ? (notice.isEmpty() ? (wake.registered() ? "呼びかけを待っています" : "設定から呼びかけを登録してください") : notice) :
