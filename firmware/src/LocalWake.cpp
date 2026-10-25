@@ -1,10 +1,10 @@
 #include "LocalWake.h"
 #include "ConversationRules.h"
-#include <LittleFS.h>
+#include "LocalStorage.h"
 #include <memory>
 static const char* const slots[] = {"/wake-r13-a.bin", "/wake-r13-b.bin"};
 bool LocalWake::read(const char* path, Store& target) {
-    File f = LittleFS.open(path, "r");
+    File f = localstorage::filesystem().open(path, "r");
     if (!f || f.size() != sizeof(Store) || f.read((uint8_t*)&target, sizeof(Store)) != sizeof(Store)) return false;
     if (target.magic != 0x5231574c || target.version != 1 || !isfinite(target.threshold) || target.threshold < 12 || target.threshold > 32 || target.crc != conversation::crc32((uint8_t*)&target, offsetof(Store, crc))) return false;
     for (auto& t : target.templates) if (t.count < 10 || t.count > localwake::MaxFrames) return false;
@@ -49,14 +49,14 @@ int LocalWake::enroll(const int16_t* samples, bool voice) {
 bool LocalWake::commit() {
     pending_.generation = registered_ ? active_.generation + 1 : 1;
     pending_.crc = conversation::crc32((uint8_t*)&pending_, offsetof(Store, crc));
-    const char* temp = "/wake-r13.tmp"; File f = LittleFS.open(temp, "w");
+    const char* temp = "/wake-r13.tmp"; File f = localstorage::filesystem().open(temp, "w");
     if (!f) return false;
     bool written = f.write((uint8_t*)&pending_, sizeof(Store)) == sizeof(Store); f.flush(); f.close();
     std::unique_ptr<Store> check(new Store);
     if (!written || !read(temp, *check) || memcmp(check.get(), &pending_, sizeof(Store))) return false;
     int next = slot_ == 0 ? 1 : 0;
-    if (LittleFS.exists(slots[next]) && !LittleFS.remove(slots[next])) return false;
-    if (!LittleFS.rename(temp, slots[next])) return false;
+    if (localstorage::filesystem().exists(slots[next]) && !localstorage::filesystem().remove(slots[next])) return false;
+    if (!localstorage::filesystem().rename(temp, slots[next])) return false;
     if (!read(slots[next], *check) || memcmp(check.get(), &pending_, sizeof(Store))) return false;
     active_ = pending_; slot_ = next; registered_ = true; return true;
 }

@@ -17,6 +17,13 @@ if ($LASTEXITCODE -ne 0) { throw 'C++ offline test failed' }
 $storageSource = Join-Path $projectDir 'tests/wake_storage.cpp'
 $wakeSource = Join-Path $projectDir 'src/LocalWake.cpp'
 $stubs = Join-Path $projectDir 'tests/storage_stubs'
+$mountSource = Join-Path $projectDir 'tests/storage_mount.cpp'
+$mountExe = Join-Path $outDir 'storage_mount.exe'
+$buildCommand = '"{0}" >nul && cl /nologo /std:c++17 /utf-8 /EHsc /W4 /I"{1}" /Fe:"{2}" /Fo:"{3}\\" "{4}"' -f $vcvars,$stubs,$mountExe,$outDir,$mountSource
+& cmd.exe /d /s /c $buildCommand
+if ($LASTEXITCODE -ne 0) { throw 'Storage mount tests did not compile' }
+& $mountExe
+if ($LASTEXITCODE -ne 0) { throw 'Storage mount tests failed' }
 $storageExe = Join-Path $outDir 'wake_storage.exe'
 $buildCommand = '"{0}" >nul && cl /nologo /std:c++17 /utf-8 /EHsc /W4 /I"{1}" /Fe:"{2}" /Fo:"{3}\\" "{4}" "{5}"' -f $vcvars,$stubs,$storageExe,$outDir,$storageSource,$wakeSource
 & cmd.exe /d /s /c $buildCommand
