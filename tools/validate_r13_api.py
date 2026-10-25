@@ -12,28 +12,36 @@ import hashlib
 import io
 import json
 import pathlib
+import re
 import struct
 import sys
 import time
 import urllib.error
 import urllib.request
+import unicodedata
 import wave
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 HOST = "https://generativelanguage.googleapis.com/v1beta/"
-MODELS = {"stt": "gemini-3.1-flash-lite", "reply": "gemini-3.8-flash", "tts": "gemini-3.8-flash-lite-tts"}
+MODELS = {"stt": "gemini-3.1-flash-lite", "reply": "gemini-3.5-flash-lite", "tts": "gemini-3.8-flash-lite-tts"}
 QUESTION = "二足す三はいくつですか。"
 STT_INSTRUCTION = '音声を忠実に日本語で文字起こししてください。質問への回答、要約、推測による補完は禁止。無音はsilence、認識不能はunclear。JSONのみ: {"status":"ok|silence|unclear","transcript":"認識文"}'
 REPLY_INSTRUCTION = 'あなたはスタックチャン。親しみやすい日本語1～2文、60文字以内で答える。検索機能はないため最新情報を作らない。JSONのみ返す: {"emotion":"NORMAL|HAPPY|SAD|ANGRY|SURPRISED|THINKING","text":"読み上げ本文"}。タグや絵文字や箇条書きを本文に含めない。'
 
 
-def request(key, route, payload=None, cap=1400000):
+def expected_five(text):
+    """Accept ordinary Japanese readings without treating 15/50/greeting as 5."""
+    text = unicodedata.normalize("NFKC", text)
+    return bool(re.search(r"(?<![\d.])5(?:\.0+)?(?![\d.])|(?<![〇零一二三四五六七八九十百千万])五(?![〇零一二三四五六七八九十百千万])|いつつ|ご(?:です|だ|になる|になります|こ|個|つ|[。！!」』])", text))
+
+
+def request(key, route, payload=None, cap=1400000, timeout=45):
     started = time.monotonic()
     encoded = None if payload is None else json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
     req = urllib.request.Request(HOST + route, data=encoded, headers={"x-goog-api-key": key, "Content-Type": "application/json"})
     meta = {"request_bytes": len(encoded or b""), "http_status": None, "ok": False}
     try:
-        with urllib.request.urlopen(req, timeout=45) as response:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
             data = response.read(cap + 1)
             meta.update(http_status=response.status, content_type=response.headers.get_content_type(), response_bytes=len(data))
             expected = response.headers.get("Content-Length")
@@ -154,6 +162,8 @@ def main():
     parser.add_argument("--inspect", action="store_true")
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--resume", type=pathlib.Path, help="Previous report from this tool; reuse its synthetic fixture for one bounded retry")
+    parser.add_argument("--reply-model", default=MODELS["reply"], choices=["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"], help="Host test only; does not modify firmware/local configuration")
+    parser.add_argument("--timeout", type=float, default=45)
     args = parser.parse_args()
     if args.inspect == args.run:
         parser.error("Choose exactly one of --inspect or --run")
@@ -161,15 +171,16 @@ def main():
     key = config.get("gemini_api_key", "")
     if not key or "YOUR_" in key:
         print(json.dumps({"result": "LOCAL_KEY_UNAVAILABLE"})); return 2
+    models = {**MODELS, "reply": args.reply_model}
     if args.inspect:
         response, meta = request(key, "models?pageSize=1000")
         names = {m.get("name", "").removeprefix("models/"): m for m in (response or {}).get("models", [])}
-        print(json.dumps({"operation": "inspect_models", "transport": meta, "models": {role: {"id": model, "listed": model in names if meta["ok"] else None, "generate_content": "generateContent" in names.get(model, {}).get("supportedGenerationMethods", []) if meta["ok"] else None} for role, model in MODELS.items()}, "next_page": bool((response or {}).get("nextPageToken"))}))
+        print(json.dumps({"operation": "inspect_models", "transport": meta, "models": {role: {"id": model, "listed": model in names if meta["ok"] else None, "generate_content": "generateContent" in names.get(model, {}).get("supportedGenerationMethods", []) if meta["ok"] else None} for role, model in models.items()}, "next_page": bool((response or {}).get("nextPageToken"))}))
         return 0 if meta["ok"] else 1
     stamp = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime("%Y%m%d-%H%M%S")
     output = ROOT / "docs/validation" / ("r13-api-" + stamp)
     output.mkdir(parents=True, exist_ok=False)
-    report = {"client_date": "2026-10-25", "scope": "host REST contract using fixed synthetic Japanese speech; no device/microphone", "models": MODELS, "stages": []}
+    report = {"client_date": "2026-10-25", "scope": "host REST contract using fixed synthetic Japanese speech; no device/microphone", "models": models, "timeout_seconds": args.timeout, "production_setting_changed": False, "stages": []}
     started = time.monotonic()
     if args.resume:
         source_report = args.resume.resolve()
@@ -182,7 +193,7 @@ def main():
         meta.update(input_source="verified_previous_synthetic_fixture", elapsed_seconds=0)
         report["source_report"] = str(source_report)
     else:
-        response, meta = request(key, "models/" + MODELS["tts"] + ":generateContent", tts_payload(QUESTION, config.get("tts_voice", "Kore")))
+        response, meta = request(key, "models/" + models["tts"] + ":generateContent", tts_payload(QUESTION, config.get("tts_voice", "Kore")), timeout=args.timeout)
         meta.update(stage="fixture_tts", input_source="fixed_public_test_phrase")
         fixture = wav_result(response, meta)
     report["stages"].append(meta); print(json.dumps(meta), flush=True)
@@ -190,7 +201,7 @@ def main():
     if fixture:
         (output / "synthetic-question-24k.wav").write_bytes(fixture)
         speech = to_input_wav(fixture); (output / "synthetic-question-16k.wav").write_bytes(speech)
-        response, meta = request(key, "models/" + MODELS["stt"] + ":generateContent", text_payload(STT_INSTRUCTION, 1024, audio=speech), cap=16000)
+        response, meta = request(key, "models/" + models["stt"] + ":generateContent", text_payload(STT_INSTRUCTION, 1024, audio=speech), cap=16000, timeout=args.timeout)
         meta.update(stage="stt", input_source="synthetic_question_16k")
         result = text_result(response, meta)
         if result:
@@ -200,23 +211,23 @@ def main():
         normalized = recognized.translate(str.maketrans("２３二三", "2323"))
         meta["expected_question_match"] = "2" in normalized and "3" in normalized
         report["stages"].append(meta); print(json.dumps(meta), flush=True)
-    response, meta = request(key, "models/" + MODELS["reply"] + ":generateContent", text_payload(recognized or QUESTION, 2048, system=REPLY_INSTRUCTION), cap=16000)
+    response, meta = request(key, "models/" + models["reply"] + ":generateContent", text_payload(recognized or QUESTION, 2048, system=REPLY_INSTRUCTION), cap=16000, timeout=args.timeout)
     meta.update(stage="reply", input_source="stt_result" if recognized else "fixed_fixture_independent_test")
     result = text_result(response, meta)
     answer = result.get("text", "").strip()[:60] if result else ""
     meta["ok"] = bool(meta["ok"] and answer)
     meta["answer_characters"] = len(answer)
-    meta["expected_answer_five"] = bool(answer and any(s in answer for s in ("5", "５", "五", "ご")))
+    meta["expected_answer_five"] = expected_five(answer)
     report["stages"].append(meta); print(json.dumps(meta), flush=True)
     if answer:
-        response, meta = request(key, "models/" + MODELS["tts"] + ":generateContent", tts_payload(answer, config.get("tts_voice", "Kore")))
+        response, meta = request(key, "models/" + models["tts"] + ":generateContent", tts_payload(answer, config.get("tts_voice", "Kore")), timeout=args.timeout)
         meta.update(stage="reply_tts", input_source="generated_reply")
         audio = wav_result(response, meta)
         if audio:
             (output / "synthetic-reply.wav").write_bytes(audio)
         report["stages"].append(meta); print(json.dumps(meta), flush=True)
     report["total_seconds"] = round(time.monotonic() - started, 3)
-    report["pipeline_pass"] = len(report["stages"]) == 4 and all(s["ok"] for s in report["stages"])
+    report["pipeline_pass"] = len(report["stages"]) == 4 and all(s["ok"] for s in report["stages"]) and report["stages"][1].get("expected_question_match", False) and report["stages"][2].get("expected_answer_five", False)
     (output / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"pipeline_pass": report["pipeline_pass"], "report": str(output / "report.json")}), flush=True)
     return 0 if report["pipeline_pass"] else 1

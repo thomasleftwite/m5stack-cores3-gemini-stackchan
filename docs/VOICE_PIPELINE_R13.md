@@ -6,7 +6,8 @@
 ## 承認済み仕様
 
 - PC中継なしで端末からGemini APIへ接続。無料枠でSTT、回答生成、TTSを別リクエストにする。
-- STT `gemini-3.1-flash-lite`、回答 `gemini-3.8-flash`、TTS `gemini-3.8-flash-lite-tts`。有料への自動切替なし。
+- R13.2（2026-10-25採用承認）: STT `gemini-3.1-flash-lite`、回答 `gemini-3.5-flash-lite`、TTS `gemini-3.8-flash-lite-tts`。有料への自動切替なし。
+- モデルはfirmware/src/GeminiModels.hで固定する。互換用のconfig.jsonのgemini_modelは選択に使用せず、旧値があっても上記モデルを使う。既存設定ファイルを書き直さず適用する。
 - 録音WAVは16kHz/16bit/mono、上限15秒（PCM480000バイト、WAV480044バイト、Base64約640060バイト）。
 - 発話開始を5秒待つ。開始後1秒の無音、または上限15秒で終了。無音は送信しない。
 - STTは忠実な文字起こしのみ。無音・認識不能は回答生成へ進めない。認識文を回答生成へ渡す。
@@ -69,5 +70,6 @@
 - [x] 仕様承認・R13文書化（2026-10-25）。成果物: docs/VOICE_PIPELINE_R13.md。会話で合意済み条件と照合。
 - [x] ファームウェア実装・配布ソース同期（2026-10-25）。成果物: firmware/src/、src/、lib/firmware-sources.ts。37配布ファイルと正本の一致を確認。
 - [x] オフラインテスト・ビルド・型検査（2026-10-25）。成果物: firmware/tests/、firmware/.pio/build/m5stack-cores3/firmware.bin。詳細はR13_VALIDATION.md。
-- [ ] ユーザープロジェクトの無料枠・API統合検証（2026-10-25追加承認済み、部分確認）。TTS/STT成功、回答生成503/タイムアウト。詳細はR13_API_VALIDATION_2026-10-25.md。
+- [x] 回答3.5 Flash-Lite採用承認と実装（2026-10-25）。成果物: firmware/src/GeminiModels.h等。PC側STT→回答→TTS成功はR13_MODEL_COMPARISON_2026-10-25.md、採用後の検証はR13_2_MODEL_ADOPTION_2026-10-25.md。
+- [ ] ユーザープロジェクトの無料枠残量・連続利用上限と実機API統合検証。PC側成功と分けて確認する。
 - [ ] CoreS3録音・3回登録・照合・再生・タッチ・電源断・総遅延の実機検証（未実施、承認待ち）。

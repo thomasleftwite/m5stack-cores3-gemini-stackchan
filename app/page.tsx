@@ -7,6 +7,7 @@ import { VoiceCameraSimulator } from "@/components/VoiceCameraSimulator";
 import { FirmwareCodeStudio } from "@/components/FirmwareCodeStudio";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { TechnicalQuestionsAndArchitecture } from "@/components/TechnicalQuestionsAndArchitecture";
+import { REPLY_MODEL } from "@/lib/gemini-models";
 import {
   Sparkles,
   Bot,
@@ -37,7 +38,7 @@ export default function HomePage() {
 
   // Settings
   const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [geminiModel, setGeminiModel] = useState("gemini-3.5-flash");
+  const [geminiModel, setGeminiModel] = useState<string>(REPLY_MODEL);
   const [ttsVoice, setTtsVoice] = useState("Kore");
   const [wakeWord, setWakeWord] = useState("スタックちゃん");
   const [silenceTimeoutSec, setSilenceTimeoutSec] = useState(6);
@@ -68,7 +69,7 @@ export default function HomePage() {
   // Reset defaults handler
   const handleResetDefaults = () => {
     setGeminiApiKey("");
-    setGeminiModel("gemini-3.8-flash");
+    setGeminiModel(REPLY_MODEL);
     setTtsVoice("Kore");
     setWakeWord("スタックちゃん");
     setSilenceTimeoutSec(6);

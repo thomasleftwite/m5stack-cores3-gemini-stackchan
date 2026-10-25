@@ -5,7 +5,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const firmware = path.join(root, 'firmware');
 const entries = [];
 function add(relative, file) {
-  entries.push({ name: path.basename(relative), path: relative.replaceAll('\\', '/'), description: 'R13 / API・実機未検証', language: /\.[ch](pp)?$/.test(relative) ? 'cpp' : relative.endsWith('.json') ? 'json' : relative.endsWith('.md') ? 'markdown' : 'text', content: fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '') });
+  entries.push({ name: path.basename(relative), path: relative.replaceAll('\\', '/'), description: 'R13.2 / PC API確認・実機未検証', language: /\.[ch](pp)?$/.test(relative) ? 'cpp' : relative.endsWith('.json') ? 'json' : relative.endsWith('.md') ? 'markdown' : 'text', content: fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '') });
 }
 function walk(relative) {
   for (const item of fs.readdirSync(path.join(firmware, relative), { withFileTypes: true })) {

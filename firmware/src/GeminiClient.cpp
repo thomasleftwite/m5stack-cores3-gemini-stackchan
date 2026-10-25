@@ -1,4 +1,5 @@
 #include "GeminiClient.h"
+#include "GeminiModels.h"
 #include "ConversationRules.h"
 #include "ReplyRetry.h"
 #include <ArduinoJson.h>
@@ -117,7 +118,7 @@ struct ReplyTransport {
         const uint32_t elapsed = millis() - began;
         if (elapsed >= replyretry::RetryStartBudgetMs) return false;
         response.clear();
-        return post("gemini-3.8-flash", request, response, 16000, replyretry::RetryStartBudgetMs - elapsed);
+        return post(geminimodels::Reply, request, response, 16000, replyretry::RetryStartBudgetMs - elapsed);
     }
     int status() const { return httpCode.load(); }
     uint32_t nowMillis() const { return millis(); }
@@ -147,7 +148,7 @@ String limitText(String value, size_t characters) {
     return value.substring(0, pos);
 }
 }
-void GeminiClient::init(const String& apiKey, const String&, const String& chosenVoice) { key = apiKey; voice = chosenVoice; }
+void GeminiClient::init(const String& apiKey, const String& chosenVoice) { key = apiKey; voice = chosenVoice; }
 bool GeminiClient::start(const int16_t* pcm, size_t samples, const String& now) {
     if (busy()) return false;
     clear(); input = pcm; inputCount = samples; dateTime = now;
@@ -183,7 +184,7 @@ void GeminiClient::worker(void*) {
                 request["contents"][0]["parts"][0]["inlineData"]["data"] = (const char*)encoded.get();
                 request["contents"][0]["parts"][1]["text"] = "音声を忠実に日本語で文字起こししてください。質問への回答、要約、推測による補完は禁止。無音はsilence、認識不能はunclear。JSONのみ: {\"status\":\"ok|silence|unclear\",\"transcript\":\"認識文\"}";
                 textConfig(request, 1024);
-                ok = post("gemini-3.1-flash-lite", request, response, 16000);
+                ok = post(geminimodels::Stt, request, response, 16000);
                 if (ok) {
                     JsonDocument result(&allocator);
                     ok = !deserializeJson(result, textResult(response));
@@ -226,7 +227,7 @@ void GeminiClient::worker(void*) {
         request["contents"][0]["parts"][0]["text"] = reply;
         request["generationConfig"]["responseModalities"][0] = "AUDIO";
         request["generationConfig"]["speechConfig"]["voiceConfig"]["prebuiltVoiceConfig"]["voiceName"] = voice;
-        ok = post("gemini-3.8-flash-lite-tts", request, response, MaxBody);
+        ok = post(geminimodels::Tts, request, response, MaxBody);
         if (ok) {
             ok = completeCandidate(response); unsigned blocks = 0;
             for (JsonObjectConst part : response["candidates"][0]["content"]["parts"].as<JsonArrayConst>()) {

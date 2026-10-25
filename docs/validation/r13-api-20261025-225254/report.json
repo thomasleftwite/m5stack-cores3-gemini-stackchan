@@ -1,0 +1,101 @@
+{
+  "client_date": "2026-10-25",
+  "scope": "host REST contract using fixed synthetic Japanese speech; no device/microphone",
+  "models": {
+    "stt": "gemini-3.1-flash-lite",
+    "reply": "gemini-3.5-flash-lite",
+    "tts": "gemini-3.8-flash-lite-tts"
+  },
+  "timeout_seconds": 15.0,
+  "production_setting_changed": false,
+  "stages": [
+    {
+      "request_bytes": 202,
+      "http_status": 200,
+      "ok": true,
+      "content_type": "application/json",
+      "response_bytes": 188099,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 70,
+        "totalTokenCount": 78
+      },
+      "elapsed_seconds": 0,
+      "stage": "fixture_tts",
+      "input_source": "verified_previous_synthetic_fixture",
+      "finish_reason": "STOP",
+      "audio_mime": "audio/wav",
+      "audio_bytes": 140516,
+      "sample_rate": 24000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_seconds": 2.8,
+      "sha256": "09d4ae3dac955925d63f086a9ff2826bb0e5520df3e63d81dc1a541b26b6ede5"
+    },
+    {
+      "request_bytes": 120002,
+      "http_status": 200,
+      "ok": true,
+      "content_type": "application/json",
+      "response_bytes": 896,
+      "usage": {
+        "promptTokenCount": 128,
+        "candidatesTokenCount": 27,
+        "totalTokenCount": 155
+      },
+      "elapsed_seconds": 9.852,
+      "stage": "stt",
+      "input_source": "synthetic_question_16k",
+      "finish_reason": "STOP",
+      "text_bytes": 72,
+      "transcript_bytes": 32,
+      "expected_question_match": true
+    },
+    {
+      "request_bytes": 583,
+      "http_status": 200,
+      "ok": true,
+      "content_type": "application/json",
+      "response_bytes": 1140,
+      "usage": {
+        "promptTokenCount": 90,
+        "candidatesTokenCount": 31,
+        "totalTokenCount": 174,
+        "thoughtsTokenCount": 53
+      },
+      "elapsed_seconds": 1.011,
+      "stage": "reply",
+      "input_source": "stt_result",
+      "finish_reason": "STOP",
+      "text_bytes": 86,
+      "answer_characters": 18,
+      "expected_answer_five": true
+    },
+    {
+      "request_bytes": 214,
+      "http_status": 200,
+      "ok": true,
+      "content_type": "application/json",
+      "response_bytes": 229061,
+      "usage": {
+        "promptTokenCount": 13,
+        "candidatesTokenCount": 86,
+        "totalTokenCount": 99
+      },
+      "elapsed_seconds": 2.521,
+      "stage": "reply_tts",
+      "input_source": "generated_reply",
+      "finish_reason": "STOP",
+      "audio_mime": "audio/wav",
+      "audio_bytes": 171236,
+      "sample_rate": 24000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_seconds": 3.44,
+      "sha256": "85a0235b034414780509e93d432aafc4889b8b2d85b75d41454d35803d403c1d"
+    }
+  ],
+  "source_report": "C:\\Users\\thoma\\SynologyDrive\\H\\Doc\\Src\\Codex\\projects\\ai-stackchan\\m5stack-cores3-gemini-stackchan\\docs\\validation\\r13-api-20261025-210943\\report.json",
+  "total_seconds": 13.399,
+  "pipeline_pass": true
+}

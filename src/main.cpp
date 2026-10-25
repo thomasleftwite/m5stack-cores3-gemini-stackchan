@@ -185,7 +185,7 @@ static String requestErrorText() {
 void setup() {
     auto cfg = M5.config(); cfg.serial_baudrate = 115200; cfg.internal_spk = true; cfg.internal_mic = true;
     M5.begin(cfg);
-    Serial.println("[System] CoreS3 file conversation R13.1");
+    Serial.println("[System] CoreS3 file conversation R13.2");
     if (!ConfigManager::load(g_config)) {
         M5.Display.println("Settings storage unavailable; no automatic format.");
         while (true) delay(100);
@@ -201,7 +201,7 @@ void setup() {
         while (true) delay(100);
     }
     wake.begin();
-    GeminiClient::init(g_config.gemini_api_key, g_config.gemini_model, g_config.tts_voice);
+    GeminiClient::init(g_config.gemini_api_key, g_config.tts_voice);
     ready();
 }
 void loop() {

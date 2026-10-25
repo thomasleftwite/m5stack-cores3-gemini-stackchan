@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { FIRMWARE_FILES, FirmwareFile } from "@/lib/firmware-sources";
+import { REPLY_MODEL } from "@/lib/gemini-models";
 import {
   Code,
   Download,
@@ -48,7 +49,7 @@ export const FirmwareCodeStudio: React.FC<FirmwareCodeStudioProps> = ({
   // Generate dynamic config.json content reflecting current props
   // Shared downloads always contain a key-free example. Add credentials locally.
   const currentConfigContent = JSON.stringify({
-    gemini_api_key: "", gemini_model: "gemini-3.8-flash", tts_voice: ttsVoiceParam,
+    gemini_api_key: "", gemini_model: REPLY_MODEL, tts_voice: ttsVoiceParam,
     spk_volume: 160, mic_gain: 80, servo_enabled: servoEnabledParam,
     servo_pan_pin: servoPanPinParam, servo_tilt_pin: servoTiltPinParam,
     servo_pan_center: servoPanCenterParam, servo_tilt_center: servoTiltCenterParam,

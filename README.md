@@ -3,7 +3,8 @@
 
 現行仕様は [VOICE_PIPELINE_R13.md](docs/VOICE_PIPELINE_R13.md)、実装・検証状態は [R13_VALIDATION.md](docs/R13_VALIDATION.md) を参照してください。
 無料枠のSTT→回答生成→TTS、3回のローカル呼びかけ登録、15秒録音、ready/3分sleep/touch復帰、音声ファイル全体受信後の再生へ変更しました。
-API・実機検証は未実施です。10秒以内の待ち時間と照合精度は保証していません。既存機の設定・登録データを保持するため、uploadfsを実行しないでください。
+R13.2では回答生成にgemini-3.5-flash-liteを採用しました。STTは3.1 Flash-Lite、TTSは3.8 Flash-Lite TTSです。PC側で合成音声による一連のAPI処理を確認しました。実機は未検証で、10秒以内の待ち時間と照合精度は保証していません。
+モデルはfirmware/src/GeminiModels.hで固定され、既存config.jsonのgemini_modelの旧値では変更されません。モデル切替のためにAPIキー・Wi-Fi・登録データを転送し直す必要はありません。保存領域の不一致が未解決のため、upload/uploadfsによる実機導入はまだ行わないでください。
 実機用正本は firmware/ です。ルートsrcとWeb配布は tools/sync_firmware_sources.mjs で同期します。
 以下は変更前の記録です。R13と異なるストリーミング・カメラ起床・自動追加入力の記述は過去仕様です。
 

@@ -2,10 +2,11 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include "GeminiModels.h"
 
 struct AppConfig {
     String gemini_api_key = "";
-    String gemini_model = "gemini-3.8-flash";
+    String gemini_model = geminimodels::Reply;
     String tts_voice = "Kore";
     String wake_word = "スタックちゃん";
     int silence_timeout_sec = 6;
@@ -52,7 +53,7 @@ public:
     }
 
     static bool load(AppConfig& cfg) {
-        // 1. LittleFSのマウント試行 (破損または未フォーマット時は自動フォーマット)
+        // Preserve existing storage if mounting fails; never auto-format.
         bool mounted = LittleFS.begin(false);
         if (!mounted) {
             Serial.println("[Config] Storage unavailable; preserving existing settings and wake data.");
@@ -86,10 +87,9 @@ public:
         }
 
         cfg.gemini_api_key = doc["gemini_api_key"] | cfg.gemini_api_key;
-        cfg.gemini_model = doc["gemini_model"] | "gemini-flash-latest";
-        if (cfg.gemini_model.isEmpty() || cfg.gemini_model == "gemini-2.5-flash" || cfg.gemini_model == "gemini-2.5-flash-lite" || cfg.gemini_model == "gemini-2.0-flash" || cfg.gemini_model == "gemini-1.5-flash") {
-            cfg.gemini_model = "gemini-flash-latest";
-        }
+        // Retain the legacy config field for export compatibility. R13 uses fixed models.
+        // Old on-device config values cannot override the approved reply model.
+        cfg.gemini_model = geminimodels::Reply;
         cfg.tts_voice = doc["tts_voice"] | "Kore";
         cfg.wake_word = doc["wake_word"] | "スタックちゃん";
         cfg.silence_timeout_sec = doc["silence_timeout_sec"] | 6;

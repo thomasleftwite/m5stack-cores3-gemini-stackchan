@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ai } from "@/lib/gemini";
+import { REPLY_MODEL } from "@/lib/gemini-models";
 import { ThinkingLevel } from "@google/genai";
 
 const SYSTEM_INSTRUCTION = `You are Stack-chan (スタックチャン), an adorable desktop companion robot powered by an M5Stack CoreS3 Lite device.
@@ -107,10 +108,10 @@ export async function POST(req: NextRequest) {
     let emotion = "NORMAL";
     let isFallback = false;
 
-    // 1. Call Gemini 3.8 Flash for dialogue with timeout protection
+    // 1. Generate dialogue with the approved reply model.
     try {
       const chatResponse = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: REPLY_MODEL,
         contents,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
