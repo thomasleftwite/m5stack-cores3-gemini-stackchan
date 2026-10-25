@@ -5,7 +5,7 @@
 
 struct AppConfig {
     String gemini_api_key = "";
-    String gemini_model = "gemini-3.5-flash";
+    String gemini_model = "gemini-3.8-flash";
     String tts_voice = "Kore";
     String wake_word = "スタックちゃん";
     int silence_timeout_sec = 6;
@@ -55,8 +55,7 @@ public:
         // 1. LittleFSのマウント試行 (破損または未フォーマット時は自動フォーマット)
         bool mounted = LittleFS.begin(false);
         if (!mounted) {
-            Serial.println("[Config] LittleFS unformatted or corrupt. Formatting now...");
-            mounted = LittleFS.begin(true); // formatOnFail = true
+            Serial.println("[Config] Storage unavailable; preserving existing settings and wake data.");
         }
 
         if (!mounted) {
@@ -87,7 +86,10 @@ public:
         }
 
         cfg.gemini_api_key = doc["gemini_api_key"] | cfg.gemini_api_key;
-        cfg.gemini_model = doc["gemini_model"] | "gemini-3.8-flash";
+        cfg.gemini_model = doc["gemini_model"] | "gemini-flash-latest";
+        if (cfg.gemini_model.isEmpty() || cfg.gemini_model == "gemini-2.5-flash" || cfg.gemini_model == "gemini-2.5-flash-lite" || cfg.gemini_model == "gemini-2.0-flash" || cfg.gemini_model == "gemini-1.5-flash") {
+            cfg.gemini_model = "gemini-flash-latest";
+        }
         cfg.tts_voice = doc["tts_voice"] | "Kore";
         cfg.wake_word = doc["wake_word"] | "スタックちゃん";
         cfg.silence_timeout_sec = doc["silence_timeout_sec"] | 6;
@@ -101,7 +103,7 @@ public:
         cfg.servo_pan_center = doc["servo_pan_center"] | 90;
         cfg.servo_tilt_center = doc["servo_tilt_center"] | 90;
 
-        Serial.println("[Config] Loaded successfully from LittleFS");
+        Serial.println("[Config] Local configuration loaded.");
         return true;
     }
 };

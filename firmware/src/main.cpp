@@ -4,27 +4,9 @@
 #include "ConfigManager.h"
 #include "StackChanAvatar.h"
 #include "AudioTask.h"
-#include "CameraMotion.h"
 #include "GeminiClient.h"
 #include "ServoControl.h"
-
-// アプリケーション状態マシン
-enum AppState {
-    STATE_SLEEP,                  // 静止待機 (カメラまたはタッチ/キーワードで復帰)
-    STATE_STANDBY_WAIT_KEYWORD,   // 動体検知後、ウェイクワード発話を待機
-    STATE_LISTENING,              // ユーザー発話録音中
-    STATE_THINKING,               // Gemini API 直接ストリーミング問い合わせ中
-    STATE_SPEAKING,               // スタックチャン発話 & リップシンク & 首振り
-    STATE_WAIT_FOLLOWUP           // 会話継続待ち (一定時間無音でSLEEPへ)
-};
-
-AppConfig g_config;
-StackChanAvatar g_avatar;
-volatile AppState g_state = STATE_SLEEP;
-
-TaskHandle_t hAvatarTask = nullptr;
-TaskHandle_t hMotionTask = nullptr;
-
+#include "LocalWake.h"
 static void logWiFiEvent(arduino_event_id_t event, arduino_event_info_t info) {
     switch (event) {
         case ARDUINO_EVENT_WIFI_STA_CONNECTED:
@@ -129,265 +111,174 @@ static String getFormattedJSTTime() {
     return "";
 }
 
-// 1. アバター描画 & サーボ補間タスク (Core 1 / 60FPS)
-void avatarTaskCode(void* pv) {
-    while (true) {
-        float liveRms = AudioTask::getLiveRMS();
 
-        if (g_state == STATE_SPEAKING) {
-            g_avatar.setLipSyncLevel(liveRms * 2.5f);
-            if (g_config.servo_enabled) {
-                ServoControl::setLipSync(liveRms);
-            }
-        } else {
-            g_avatar.setLipSyncLevel(0.0f);
-        }
+enum class Mode { Ready, Sleep, Setting, Enroll, Cue, Recording, Busy, Speaking, Error };
+AppConfig g_config;
+StackChanAvatar g_avatar;
+LocalWake wake;
+Mode mode = Mode::Ready;
+conversation::CaptureGate gate;
+uint32_t lastActivity = 0, entered = 0, lastDraw = 0;
+bool touching = false, cancelRequested = false;
+String notice;
+int16_t frame[320];
 
-        g_avatar.update();
-
-        if (g_config.servo_enabled) {
-            ServoControl::update();
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(16)); // ~60fps
+static void setEmotion(AvatarEmotion e) {
+    g_avatar.setEmotion(e); if (g_config.servo_enabled) ServoControl::setEmotion(e);
+}
+static void ready(const String& message = "") {
+    AudioTask::stopPlayback(); AudioTask::stopRecording(); AudioTask::clearRecording();
+    GeminiClient::clear(); wake.cancelEnrollment(); wake.resetDetection();
+    M5.Display.setBrightness(100); mode = Mode::Ready; entered = lastActivity = millis();
+    bool micOk = AudioTask::setMicEnabled(wake.registered());
+    notice = !micOk ? "マイクの準備に失敗しました" : message;
+    setEmotion(EMOTION_NORMAL);
+}
+static void sleepNow() {
+    AudioTask::setMicEnabled(false); AudioTask::clearRecording();
+    GeminiClient::clear(true); wake.resetDetection(); mode = Mode::Sleep;
+    setEmotion(EMOTION_SLEEP); M5.Display.setBrightness(0);
+}
+static void enterSetting() {
+    wake.resetDetection(); AudioTask::setMicEnabled(false); mode = Mode::Setting;
+}
+static void drawMenu(const String& title, const String& action, const String& detail) {
+    M5.Display.fillScreen(0x18E3); M5.Display.setFont(&fonts::efontJA_16);
+    M5.Display.setTextColor(TFT_WHITE, 0x18E3); M5.Display.setTextSize(1);
+    M5.Display.setCursor(12, 15); M5.Display.println(title);
+    M5.Display.setCursor(12, 45); M5.Display.println(detail);
+    M5.Display.fillRoundRect(10, 85, 300, 60, 8, 0x249f);
+    M5.Display.setCursor(20, 105); M5.Display.println(action);
+    M5.Display.setCursor(20, 195); M5.Display.println("戻る / キャンセル");
+}
+static String stageText() {
+    if (cancelRequested) return "キャンセル処理中";
+    switch (GeminiClient::stage()) {
+        case GeminiClient::STT: return "音声を認識しています";
+        case GeminiClient::Reply: return "返事を考えています";
+        case GeminiClient::TTS: return "声を作っています";
+        default: return "処理しています";
     }
 }
-
-// 2. カメラ動体検知タスク (Core 0 / 低優先度)
-void motionTaskCode(void* pv) {
-    while (true) {
-        if (g_state == STATE_SLEEP && CameraMotion::isAvailable()) {
-            bool motion = CameraMotion::checkMotion(g_config.camera_motion_threshold);
-            if (motion) {
-                Serial.println("[System] Motion Detected! Waking up to STANDBY...");
-                g_avatar.setEmotion(EMOTION_NORMAL);
-                g_avatar.triggerBlink();
-                if (g_config.servo_enabled) {
-                    ServoControl::setEmotion(EMOTION_NORMAL);
-                }
-                g_state = STATE_STANDBY_WAIT_KEYWORD;
-                AudioTask::resetSilenceTimer();
-                // 動体検知起動キュー音 (静かな短音 660Hz)
-                AudioTask::playSoundCue(SOUND_CUE_WAKE_MOTION);
-            }
-        }
-        vTaskDelay(pdMS_TO_TICKS(100)); // 10FPSでチェック
-    }
-}
-
 void setup() {
-    // 1. M5Unifiedの初期化 (CoreS3 オーディオコーデック給電 & ハードウェア初期化)
-    // internal_spk = true, internal_mic = true に設定することで、
-    // M5Unified が AXP2101 PMIC 電源レール、ES7210マイクADC (I2C 0x40)、AW88298アンプ (I2C 0x36) を正しく給電・初期化する。
-    // I2Sバスの排他制御は AudioTask::init() 以降で排他直列管理を行う。
-    auto cfg = M5.config();
-    cfg.serial_baudrate = 115200;
-    cfg.internal_spk = true;
-    cfg.internal_mic = true;
+    auto cfg = M5.config(); cfg.serial_baudrate = 115200; cfg.internal_spk = true; cfg.internal_mic = true;
     M5.begin(cfg);
-
-    Serial.println("=== M5Stack CoreS3 Lite Gemini Stack-chan ===");
-
-    // 2. 設定ファイル読み込み (LittleFS破損時は自動フォーマット & デフォルト作成)
-    ConfigManager::load(g_config);
-#if STACKCHAN_SERVO_OUTPUT_DISABLED
-    // Keep WiFi/voice/API operation available while servo power is being corrected.
-    g_config.servo_enabled = false;
-    Serial.println("[Servo] Output disabled by build setting; power validation pending.");
-#endif
-
-    // Configure WiFi before starting the avatar, audio, camera or servos.
-    setupWiFi();
-
-    // 3. Port A SG90 サーボ初期化 (14bit LEDC PWM 50Hz)
-    if (g_config.servo_enabled) {
-        ServoControl::init(
-            g_config.servo_pan_pin,
-            g_config.servo_tilt_pin,
-            g_config.servo_pan_center,
-            g_config.servo_tilt_center
-        );
-        ServoControl::setEmotion(EMOTION_SLEEP);
+    Serial.println("[System] CoreS3 file conversation R13");
+    if (!ConfigManager::load(g_config)) {
+        M5.Display.println("Settings storage unavailable; no automatic format.");
+        while (true) delay(100);
     }
-
-    // 4. アバター初期化 (320x240 LCDスプライト)
+#if STACKCHAN_SERVO_OUTPUT_DISABLED
+    g_config.servo_enabled = false;
+#endif
+    setupWiFi();
+    if (g_config.servo_enabled) ServoControl::init(g_config.servo_pan_pin, g_config.servo_tilt_pin, g_config.servo_pan_center, g_config.servo_tilt_center);
     g_avatar.init(&M5.Display);
-    g_avatar.setEmotion(EMOTION_SLEEP);
-
-    // 5. オーディオ初期化 (M5.begin()と共存する安全な初期化)
-    AudioTask::init(g_config.mic_gain, g_config.spk_volume);
-    AudioTask::start();
-
-    // 6. GC0308 camera initialization using the existing internal I2C bus.
-    const bool cameraReady = CameraMotion::init();
-
-    // 8. Geminiクライアント初期化
+    if (!AudioTask::init(g_config.mic_gain, g_config.spk_volume)) {
+        M5.Display.println("Audio memory or microphone unavailable.");
+        while (true) delay(100);
+    }
+    wake.begin();
     GeminiClient::init(g_config.gemini_api_key, g_config.gemini_model, g_config.tts_voice);
-
-    // 9. FreeRTOS タスク生成 (Core 1: アバター&サーボ, Core 0: カメラ動体)
-    xTaskCreatePinnedToCore(avatarTaskCode, "AvatarTask", 4096, nullptr, 2, &hAvatarTask, 1);
-    xTaskCreatePinnedToCore(motionTaskCode, "MotionTask", 4096, nullptr, 1, &hMotionTask, 0);
-
-    Serial.printf("[System] Startup complete. Camera=%s. Entering SLEEP state.\n",
-                  cameraReady ? "ready" : "unavailable (Touch/Voice mode)");
+    ready();
 }
-
-static uint32_t s_speechEndTimestamp = 0;
-static bool s_lastRequestSuccess = true;
-
 void loop() {
     M5.update();
-    uint32_t silenceMs = AudioTask::getSilenceDurationMs();
+    uint32_t now = millis();
+    bool down = M5.Touch.getCount() > 0;
+    bool tap = (down && !touching) || M5.BtnA.wasClicked();
+    touching = down;
+    int x = down ? M5.Touch.getDetail().x : 0, y = down ? M5.Touch.getDetail().y : 200;
+    if (tap) {
+        lastActivity = now;
+        switch (mode) {
+            case Mode::Sleep: ready(); break;
+            case Mode::Ready: if (x >= 215 && y < 45) enterSetting(); break;
+            case Mode::Setting:
+                if (y >= 85 && y <= 145) {
+                    wake.beginEnrollment(); mode = Mode::Enroll; notice = "";
+                    if (!AudioTask::setMicEnabled(true)) { mode = Mode::Setting; notice = "マイクの準備に失敗しました"; }
+                } else if (y >= 180) ready();
+                break;
+            case Mode::Enroll: if (y >= 180) ready("登録を中止しました"); break;
+            case Mode::Busy: cancelRequested = true; GeminiClient::cancel(); break;
+            case Mode::Error:
+                if (y >= 85 && y <= 145) {
+                    if (GeminiClient::retry()) { cancelRequested = false; mode = Mode::Busy; }
+                    else notice = "少し待って再試行してください";
+                } else if (y >= 180) ready();
+                break;
+            default: ready("中止しました"); break;
+        }
+        lastDraw = 0;
+    }
+    AudioTask::servicePlayback();
+    if (mode == Mode::Ready) {
+        if (now - lastActivity >= conversation::IdleMs) sleepNow();
+        else if (wake.registered() && now - entered >= 1200 && AudioTask::readFrame(frame)) {
+            if (wake.detect(frame, AudioTask::isVoiceDetected())) {
+                lastActivity = now; wake.resetDetection();
+                if (AudioTask::playCue()) mode = Mode::Cue;
+                else ready("開始音を再生できません");
+            }
+        }
+    } else if (mode == Mode::Enroll) {
+        if (AudioTask::readFrame(frame)) {
+            int result = wake.enroll(frame, AudioTask::isVoiceDetected());
+            if (result == 2) ready("呼びかけを保存しました");
+            else if (result == -2) ready("保存できません。旧登録を保持");
+            else if (result == -1) { notice = "同じ言葉でもう一度"; lastDraw = 0; }
+            else if (result == 1) { notice = "次も同じ言葉を話してください"; lastDraw = 0; }
+        }
+    } else if (mode == Mode::Cue && !AudioTask::isPlaying()) {
+        if (!AudioTask::setMicEnabled(true)) ready("マイクの準備に失敗しました");
+        else { AudioTask::startRecording(); gate.reset(millis()); mode = Mode::Recording; }
+    } else if (mode == Mode::Recording) {
+        if (!AudioTask::readFrame(frame)) ready("録音に失敗しました");
+        else {
+            auto result = gate.update(millis(), AudioTask::isVoiceDetected());
+            if (result != conversation::CaptureGate::Waiting || AudioTask::recordingFull()) {
+                AudioTask::stopRecording(); AudioTask::setMicEnabled(false);
+                if (result == conversation::CaptureGate::Empty || gate.voicedMs < 200) ready("声を確認できませんでした");
+                else {
+                    size_t samples = 0; const int16_t* pcm = AudioTask::getRecordedPCM(&samples);
+                    cancelRequested = false;
+                    if (GeminiClient::start(pcm, samples, getFormattedJSTTime())) { mode = Mode::Busy; entered = millis(); setEmotion(EMOTION_THINKING); }
+                    else { mode = Mode::Error; entered = millis(); notice = ""; }
+                }
+            }
+        }
+    } else if (mode == Mode::Busy) {
+        if (GeminiClient::hasTranscript()) AudioTask::clearRecording();
+        if (!GeminiClient::busy()) {
+            if (cancelRequested || GeminiClient::stage() == GeminiClient::Cancelled) ready("中止しました");
+            else if (GeminiClient::stage() == GeminiClient::Complete) {
+                size_t samples = 0; const int16_t* audio = GeminiClient::audio(&samples);
+                setEmotion(GeminiClient::emotion());
+                if (AudioTask::playPCM(audio, samples)) mode = Mode::Speaking;
+                else ready("音声を再生できません");
+            } else { mode = Mode::Error; entered = millis(); notice = ""; setEmotion(EMOTION_SAD); }
+        }
+    } else if (mode == Mode::Speaking && !AudioTask::isPlaying()) ready();
+    else if (mode == Mode::Error && now - entered >= 30000) ready("処理を終了しました");
 
-    // 画面タッチ制御 (ウェイクアップ または 発話中断)
-    if (M5.BtnA.wasClicked() || M5.Touch.getCount() > 0) {
-        if (g_state == STATE_SPEAKING) {
-            Serial.println("[Touch] Screen tapped during speech! Stopping playback...");
-            AudioTask::stopPlayback();
-            g_state = STATE_WAIT_FOLLOWUP;
-            AudioTask::resetSilenceTimer();
-            s_speechEndTimestamp = millis();
-        } else if (g_state == STATE_SLEEP || g_state == STATE_STANDBY_WAIT_KEYWORD) {
-            Serial.println("[Touch] Screen tapped! Waking up to LISTENING...");
-            g_state = STATE_LISTENING;
-            g_avatar.setEmotion(EMOTION_HAPPY);
-            if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_HAPPY);
-            AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
-            AudioTask::startRecording();
-            AudioTask::resetSilenceTimer();
+    if (mode != Mode::Sleep && millis() - lastDraw >= 50) {
+        lastDraw = millis();
+        if (mode == Mode::Setting) drawMenu("設定", "ウェイクワード登録 / 更新", notice.isEmpty() ? "同じ人が同じ呼びかけを3回録音" : notice);
+        else if (mode == Mode::Enroll) drawMenu("呼びかけの登録", String(wake.enrollmentCount() + 1) + " / 3  同じ言葉を話してください", notice);
+        else if (mode == Mode::Error) drawMenu("応答できませんでした", "失敗した処理から再試行", notice.isEmpty() ? (GeminiClient::httpStatus() == 429 ? "無料枠の上限です。しばらくお待ちください" : "設定・接続を確認してください") : notice);
+        else {
+            String status = mode == Mode::Ready ? (notice.isEmpty() ? (wake.registered() ? "呼びかけを待っています" : "設定から呼びかけを登録してください") : notice) :
+                mode == Mode::Cue ? "合図の後に話してください" : mode == Mode::Recording ? "録音中 / タッチで中止" :
+                mode == Mode::Speaking ? "お話し中 / タッチで中止" : stageText() + " / タッチで中止";
+            g_avatar.setStatus(status); g_avatar.setLipSyncLevel(mode == Mode::Speaking ? AudioTask::getLiveRMS() * 2.5f : 0);
+            g_avatar.update();
+            if (mode == Mode::Ready) {
+                M5.Display.fillRoundRect(220, 5, 95, 32, 5, 0x249f);
+                M5.Display.setFont(&fonts::efontJA_16); M5.Display.setCursor(250, 12); M5.Display.print("設定");
+            }
         }
     }
-
-    switch (g_state) {
-        case STATE_SLEEP:
-            break;
-
-        case STATE_STANDBY_WAIT_KEYWORD:
-            if (AudioTask::isVoiceDetected()) {
-                Serial.println("[Voice] Wake sound heard! Transition to LISTENING...");
-                g_avatar.setEmotion(EMOTION_HAPPY);
-                if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_HAPPY);
-                g_state = STATE_LISTENING;
-                AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
-                AudioTask::startRecording();
-                AudioTask::resetSilenceTimer();
-            } else if (silenceMs > 8000) {
-                Serial.println("[Timeout] No wake sound. Returning to SLEEP.");
-                g_avatar.setEmotion(EMOTION_SLEEP);
-                if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SLEEP);
-                g_state = STATE_SLEEP;
-            }
-            break;
-
-        case STATE_LISTENING:
-            if (AudioTask::isVoiceDetected()) {
-                AudioTask::resetSilenceTimer();
-            } else if (silenceMs > 1200) {
-                // 発話終端検出 (1.2秒の無音で録音完了音を鳴らし、思考状態へ移行)
-                AudioTask::stopRecording();
-                AudioTask::playSoundCue(SOUND_CUE_REC_COMPLETE);
-                g_state = STATE_THINKING;
-                g_avatar.setEmotion(EMOTION_THINKING);
-                if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_THINKING);
-
-                String jstTime = getFormattedJSTTime();
-                if (!jstTime.isEmpty()) {
-                    GeminiClient::setCurrentDateTime(jstTime);
-                }
-
-                bool requestOk = false;
-                size_t samples = 0;
-                const int16_t* pcm = AudioTask::getRecordedPCM(&samples);
-
-                if (AudioTask::hasMeaningfulSpeech() && pcm && samples > 1600) {
-                    Serial.printf("[VAD] User speech captured (%u samples, %u ms). Sending audio to Gemini...\n",
-                                  static_cast<unsigned>(samples),
-                                  static_cast<unsigned>(samples * 1000 / 16000));
-                    requestOk = GeminiClient::sendUserAudioDialogue(
-                        pcm,
-                        samples,
-                        [](AvatarEmotion emo) {
-                            g_avatar.setEmotion(emo);
-                            if (g_config.servo_enabled) ServoControl::setEmotion(emo);
-                        },
-                        [](const String& token) {},
-                        [](const uint8_t* ttsPcm, size_t len) {
-                            AudioTask::enqueueAudioChunk(ttsPcm, len);
-                        }
-                    );
-                } else {
-                    Serial.println("[VAD] Tap or very short prompt. Sending greeting...");
-                    requestOk = GeminiClient::sendUserPromptStream(
-                        "こんにちは！元気？",
-                        [](AvatarEmotion emo) {
-                            g_avatar.setEmotion(emo);
-                            if (g_config.servo_enabled) ServoControl::setEmotion(emo);
-                        },
-                        [](const String& token) {},
-                        [](const uint8_t* ttsPcm, size_t len) {
-                            AudioTask::enqueueAudioChunk(ttsPcm, len);
-                        }
-                    );
-                }
-
-                if (requestOk && AudioTask::isPlaying()) {
-                    s_lastRequestSuccess = true;
-                    g_state = STATE_SPEAKING;
-                } else if (!requestOk) {
-                    s_lastRequestSuccess = false;
-                    g_avatar.setEmotion(EMOTION_SAD);
-                    if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SAD);
-                    Serial.println("[State] Request failed or quota exceeded. Playing error sound cue...");
-                    AudioTask::playSoundCue(SOUND_CUE_ERROR); // 困惑・エラーを表現する下降トーン
-                    g_state = STATE_SPEAKING;
-                } else {
-                    s_lastRequestSuccess = true;
-                    g_state = STATE_WAIT_FOLLOWUP;
-                    AudioTask::resetSilenceTimer();
-                    s_speechEndTimestamp = millis();
-                }
-            }
-            break;
-
-        case STATE_SPEAKING:
-            if (!AudioTask::isPlaying()) {
-                if (s_lastRequestSuccess) {
-                    Serial.println("[Speech] Audio playback finished. Transitioning to WAIT_FOLLOWUP.");
-                    g_state = STATE_WAIT_FOLLOWUP;
-                } else {
-                    Serial.println("[Speech] Error chime finished. Returning to STANDBY (prevents rapid retry loop).");
-                    g_state = STATE_STANDBY_WAIT_KEYWORD;
-                }
-                AudioTask::resetSilenceTimer();
-                s_speechEndTimestamp = millis();
-            }
-            break;
-
-        case STATE_WAIT_FOLLOWUP:
-            // スピーカー再生直後の1200msクールダウン (スピーカー残響・マイク回り込みによる誤検知を遮断)
-            if (millis() - s_speechEndTimestamp > 1200) {
-                if (AudioTask::isVoiceDetected()) {
-                    Serial.println("[Voice] Follow-up speech detected. Returning to LISTENING...");
-                    g_state = STATE_LISTENING;
-                    g_avatar.setEmotion(EMOTION_NORMAL);
-                    if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_NORMAL);
-                    AudioTask::playSoundCue(SOUND_CUE_WAKE_WORD);
-                    AudioTask::startRecording();
-                    AudioTask::resetSilenceTimer();
-                    break;
-                }
-            }
-            if (silenceMs > (uint32_t)g_config.silence_timeout_sec * 1000) {
-                Serial.println("[Timeout] Silence limit reached. Ending session.");
-                g_avatar.setEmotion(EMOTION_SLEEP);
-                if (g_config.servo_enabled) ServoControl::setEmotion(EMOTION_SLEEP);
-                g_state = STATE_SLEEP;
-            }
-            break;
-
-        default:
-            break;
-    }
-
-    delay(20);
+    if (g_config.servo_enabled) { ServoControl::setLipSync(mode == Mode::Speaking ? AudioTask::getLiveRMS() : 0); ServoControl::update(); }
+    delay(1);
 }

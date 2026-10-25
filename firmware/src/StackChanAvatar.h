@@ -21,9 +21,11 @@ public:
     void setLipSyncLevel(float level); // 0.0 ~ 1.0 (口の開き具合)
     void triggerBlink();
     void setGaze(float x, float y);   // -1.0 ~ 1.0 (視線)
+    void setStatus(const String& text) { _status = text; }
 
 private:
     M5GFX* _gfx = nullptr;
+    String _status;
     M5Canvas _canvas; // PSRAM上のダブルバッファスプライト (320x240)
 
     AvatarEmotion _emotion = EMOTION_NORMAL;

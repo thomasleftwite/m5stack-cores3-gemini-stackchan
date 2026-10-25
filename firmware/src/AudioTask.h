@@ -1,52 +1,23 @@
 #pragma once
 #include <Arduino.h>
 #include <M5Unified.h>
-
-enum AudioMode {
-    AUDIO_MODE_UNINIT = 0,
-    AUDIO_MODE_MIC,
-    AUDIO_MODE_PLAYBACK
-};
-
-enum SoundCue {
-    SOUND_CUE_WAKE_MOTION = 0, // 動体検知で起動（静かな短音 660Hz 1音）
-    SOUND_CUE_WAKE_WORD,       // ウェイクワード/タップで入力待ち（軽快な上昇 2音 880Hz -> 1320Hz）
-    SOUND_CUE_REC_COMPLETE,    // 入力録音完了（柔らかい受理音 1046Hz 1音）
-    SOUND_CUE_ERROR            // AIデータ送受信失敗・クォータ制限（困惑の下降 3音 880Hz -> 660Hz -> 440Hz）
-};
-
+#include "ConversationRules.h"
+// UI loop owns I2S. The network worker never touches microphone/speaker.
 class AudioTask {
-public:
-    static void init(uint8_t micGain, uint8_t spkVolume);
-    static void start();
-    
-    // I2S排他モード制御 (CoreS3 ハーフデュプレックスハードウェア対応)
-    static void requestMicMode();
-    static void requestPlaybackMode();
-    static AudioMode getCurrentMode();
-
-    // VAD & リップシンク値取得
-    static float getLiveRMS();
+ public:
+    static bool init(uint8_t micGain, uint8_t volume);
+    static bool setMicEnabled(bool enabled);
+    static bool readFrame(int16_t* frame);
     static bool isVoiceDetected();
-    static uint32_t getSilenceDurationMs();
-    static void resetSilenceTimer();
-
-    // 再生キューへのPCMデータ供給
-    static void enqueueAudioChunk(const uint8_t* pcmData, size_t length);
-    static void finishAudioStream();
-    static bool isPlaying();
-    static void stopPlayback();
-    static void playChirp(bool happy = true);
-    static void playSoundCue(SoundCue cue);
-
-    // 録音機能 (STT / Gemini Multimodal用)
+    static float getLiveRMS();
     static void startRecording();
     static void stopRecording();
-    static bool isRecording();
-    static const int16_t* getRecordedPCM(size_t* outSamples);
-    static size_t getRecordedBytes();
-    static bool hasMeaningfulSpeech();
-
-private:
-    static void audioWorkerTask(void* pvParameters);
+    static void clearRecording();
+    static const int16_t* getRecordedPCM(size_t* count);
+    static bool recordingFull();
+    static bool playPCM(const int16_t* data, size_t samples);
+    static bool playCue();
+    static void servicePlayback();
+    static bool isPlaying();
+    static void stopPlayback();
 };

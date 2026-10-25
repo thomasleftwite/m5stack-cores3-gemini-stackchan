@@ -1,3 +1,13 @@
+<!-- R13 current -->
+# R13: ローカルウェイク + 音声ファイル対話（2026-10-25）
+
+現行仕様は [VOICE_PIPELINE_R13.md](docs/VOICE_PIPELINE_R13.md)、実装・検証状態は [R13_VALIDATION.md](docs/R13_VALIDATION.md) を参照してください。
+無料枠のSTT→回答生成→TTS、3回のローカル呼びかけ登録、15秒録音、ready/3分sleep/touch復帰、音声ファイル全体受信後の再生へ変更しました。
+API・実機検証は未実施です。10秒以内の待ち時間と照合精度は保証していません。既存機の設定・登録データを保持するため、uploadfsを実行しないでください。
+実機用正本は firmware/ です。ルートsrcとWeb配布は tools/sync_firmware_sources.mjs で同期します。
+以下は変更前の記録です。R13と異なるストリーミング・カメラ起床・自動追加入力の記述は過去仕様です。
+
+---
 # M5Stack CoreS3 Lite × Gemini AI Voice Stack-chan (スタックチャン)
 
 M5Stack CoreS3 Lite 専用の **Google Gemini 音声対話スタックチャン** システムです。

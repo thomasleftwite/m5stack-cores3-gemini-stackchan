@@ -5,7 +5,7 @@
 
 struct AppConfig {
     String gemini_api_key = "";
-    String gemini_model = "gemini-flash-latest";
+    String gemini_model = "gemini-3.8-flash";
     String tts_voice = "Kore";
     String wake_word = "スタックちゃん";
     int silence_timeout_sec = 6;
@@ -55,8 +55,7 @@ public:
         // 1. LittleFSのマウント試行 (破損または未フォーマット時は自動フォーマット)
         bool mounted = LittleFS.begin(false);
         if (!mounted) {
-            Serial.println("[Config] LittleFS unformatted or corrupt. Formatting now...");
-            mounted = LittleFS.begin(true); // formatOnFail = true
+            Serial.println("[Config] Storage unavailable; preserving existing settings and wake data.");
         }
 
         if (!mounted) {
@@ -104,8 +103,7 @@ public:
         cfg.servo_pan_center = doc["servo_pan_center"] | 90;
         cfg.servo_tilt_center = doc["servo_tilt_center"] | 90;
 
-        Serial.printf("[Config] Loaded from LittleFS: model=%s, voice=%s, wake_word=%s, spk_vol=%u\n",
-                      cfg.gemini_model.c_str(), cfg.tts_voice.c_str(), cfg.wake_word.c_str(), cfg.spk_volume);
+        Serial.println("[Config] Local configuration loaded.");
         return true;
     }
 };

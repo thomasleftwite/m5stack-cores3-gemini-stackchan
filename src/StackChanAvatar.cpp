@@ -97,6 +97,10 @@ void StackChanAvatar::update() {
     drawEyes();
     drawMouth();
 
+    _canvas.setFont(&fonts::efontJA_12);
+    _canvas.setTextColor(TFT_WHITE, 0x18E3);
+    _canvas.setCursor(5, 216);
+    _canvas.print(_status);
     // 5. 画面へ一括転送
     _canvas.pushSprite(0, 0);
 }

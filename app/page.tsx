@@ -329,6 +329,11 @@ export default function HomePage() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-8">
+        <aside className="rounded-xl border border-amber-700 bg-amber-950/40 p-4 text-sm text-amber-100">
+          実機用R13は、ローカルの呼びかけ登録、最大15秒録音、STT→回答→TTS、音声ファイル受信後再生へ変更しました。
+          下のブラウザ対話・カメラ・設定シミュレーターは旧方式の参考デモです。実機R13は本体の設定メニューから呼びかけを3回登録します。
+          コードスタジオの配布ソースはR13です。API・実機動作は未検証です。
+        </aside>
         
         {/* Hero Section */}
         <div className="flex flex-col gap-2">
