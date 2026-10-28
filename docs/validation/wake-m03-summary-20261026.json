@@ -1,0 +1,43 @@
+{
+  "report": "r13-fault-20261026-174414/report.json",
+  "boot_pass": true,
+  "boot_count": 1,
+  "fault": false,
+  "trials": [
+    {
+      "trial": 1,
+      "start": 18.594,
+      "end": 156.782,
+      "gate_frames": 1100,
+      "energy": 45,
+      "speech": 39,
+      "joint": 23,
+      "segments": [
+        {
+          "kind": "speech_evidence",
+          "voice": 11,
+          "shape": 8,
+          "seconds": 58.891
+        },
+        {
+          "kind": "speech_evidence",
+          "voice": 12,
+          "shape": 12,
+          "seconds": 65.672
+        }
+      ],
+      "enrollment_events": []
+    },
+    {
+      "trial": 2,
+      "start": 156.782,
+      "end": 299.375,
+      "gate_frames": 4800,
+      "energy": 71,
+      "speech": 19,
+      "joint": 0,
+      "segments": [],
+      "enrollment_events": []
+    }
+  ]
+}

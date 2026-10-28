@@ -9,6 +9,9 @@ class AudioTask {
     static bool setMicEnabled(bool enabled);
     static bool readFrame(int16_t* frame);
     static bool isVoiceDetected();
+    static bool isAboveBackground();
+    static void beginListeningCalibration();
+    static uint32_t listeningEpoch();
     static float getLiveRMS();
     static void startRecording();
     static void stopRecording();

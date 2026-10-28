@@ -1,0 +1,1433 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": true,
+  "events": [
+    {
+      "kind": "reset",
+      "value": "0x15",
+      "seconds": 0.406
+    },
+    {
+      "kind": "application_start",
+      "seconds": 1.953
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI04",
+      "seconds": 1.953
+    },
+    {
+      "kind": "diagnostic_revision",
+      "value": "D5",
+      "seconds": 1.953
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 1,
+      "state": 0,
+      "ms": 1732,
+      "heap": 278792,
+      "stack": 5252,
+      "seconds": 1.953
+    },
+    {
+      "kind": "ready",
+      "seconds": 9.985
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 9703,
+      "heap": 232656,
+      "stack": 4992,
+      "seconds": 9.985
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 9704,
+      "heap": 232656,
+      "stack": 4992,
+      "seconds": 9.985
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2040,
+      "ready_ms": 2040,
+      "frames": 42,
+      "voice": 20,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 12.031
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 0,
+      "seconds": 12.563
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2016,
+      "ready_ms": 4056,
+      "frames": 101,
+      "voice": 13,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 13.86
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 14722,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 14.875
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2032,
+      "ready_ms": 6089,
+      "frames": 101,
+      "voice": 41,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 15.906
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 16.156
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 17.735
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2005,
+      "ready_ms": 8095,
+      "frames": 101,
+      "voice": 43,
+      "complete": 2,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 47,
+      "seconds": 17.985
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 2,
+      "matches": 0,
+      "seconds": 18.5
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 19741,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 20.0
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2044,
+      "ready_ms": 10140,
+      "frames": 102,
+      "voice": 64,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 20.0
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 20.25
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2034,
+      "ready_ms": 12175,
+      "frames": 102,
+      "voice": 21,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 22.047
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 23.094
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2044,
+      "ready_ms": 14220,
+      "frames": 102,
+      "voice": 53,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 24.141
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 24758,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 24.891
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2011,
+      "ready_ms": 16232,
+      "frames": 102,
+      "voice": 26,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 26.172
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2023,
+      "ready_ms": 18255,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 45,
+      "seconds": 28.25
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 29758,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 29.813
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2010,
+      "ready_ms": 20265,
+      "frames": 100,
+      "voice": 40,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 45,
+      "seconds": 30.078
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2013,
+      "ready_ms": 22279,
+      "frames": 101,
+      "voice": 74,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 32.172
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 4,
+      "matches": 0,
+      "seconds": 32.172
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2026,
+      "ready_ms": 24306,
+      "frames": 101,
+      "voice": 50,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 1,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 34.219
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 34772,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 35.0
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 0,
+      "seconds": 35.0
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2029,
+      "ready_ms": 26336,
+      "frames": 102,
+      "voice": 29,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 36.313
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2015,
+      "ready_ms": 28351,
+      "frames": 100,
+      "voice": 70,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 38.141
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 4,
+      "matches": 0,
+      "seconds": 38.922
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 39821,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 39.969
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2007,
+      "ready_ms": 30359,
+      "frames": 101,
+      "voice": 11,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 1,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 40.219
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 2,
+      "matches": 0,
+      "seconds": 41.266
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2016,
+      "ready_ms": 32375,
+      "frames": 101,
+      "voice": 8,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 42.297
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2045,
+      "ready_ms": 34420,
+      "frames": 102,
+      "voice": 62,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 44.391
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 44837,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 44.906
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 4,
+      "matches": 0,
+      "seconds": 45.688
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2034,
+      "ready_ms": 36455,
+      "frames": 102,
+      "voice": 34,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 1,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 48.281
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 0,
+      "seconds": 48.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 38455,
+      "frames": 100,
+      "voice": 14,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 48.281
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 49881,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 50.094
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2028,
+      "ready_ms": 40483,
+      "frames": 100,
+      "voice": 46,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 50.36
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 50.625
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2006,
+      "ready_ms": 42490,
+      "frames": 101,
+      "voice": 5,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 52.453
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 2,
+      "matches": 0,
+      "seconds": 52.453
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2029,
+      "ready_ms": 44519,
+      "frames": 102,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 54.281
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 54941,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 55.047
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 46521,
+      "frames": 100,
+      "voice": 58,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 56.344
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 57.672
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2039,
+      "ready_ms": 48561,
+      "frames": 102,
+      "voice": 51,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 58.453
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 0,
+      "seconds": 58.953
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 59981,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 60.235
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2039,
+      "ready_ms": 50601,
+      "frames": 101,
+      "voice": 24,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 60.485
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 0,
+      "seconds": 61.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2038,
+      "ready_ms": 52639,
+      "frames": 103,
+      "voice": 23,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 62.578
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2001,
+      "ready_ms": 54640,
+      "frames": 100,
+      "voice": 13,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 64.406
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 64996,
+      "heap": 232624,
+      "stack": 4992,
+      "seconds": 65.188
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2039,
+      "ready_ms": 56679,
+      "frames": 102,
+      "voice": 46,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 66.469
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 5,
+      "matches": 2,
+      "seconds": 66.719
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 66626,
+      "heap": 231432,
+      "stack": 4992,
+      "seconds": 66.719
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 66839,
+      "heap": 232256,
+      "stack": 4992,
+      "seconds": 66.985
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 69350,
+      "heap": 232192,
+      "stack": 4992,
+      "seconds": 69.578
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 70054,
+      "heap": 232192,
+      "stack": 4992,
+      "seconds": 70.36
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2018,
+      "ready_ms": 2022,
+      "frames": 40,
+      "voice": 10,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 2,
+      "draw_max_ms": 46,
+      "seconds": 71.391
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 72.188
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2006,
+      "ready_ms": 4029,
+      "frames": 102,
+      "voice": 2,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 45,
+      "seconds": 73.469
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 2,
+      "matches": 0,
+      "seconds": 75.016
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 75054,
+      "heap": 232192,
+      "stack": 4992,
+      "seconds": 75.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2023,
+      "ready_ms": 6052,
+      "frames": 100,
+      "voice": 6,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 75.547
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2024,
+      "ready_ms": 8076,
+      "frames": 101,
+      "voice": 47,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 77.61
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 4,
+      "matches": 0,
+      "seconds": 78.641
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 10077,
+      "frames": 100,
+      "voice": 51,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 1,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 79.672
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 5,
+      "matches": 2,
+      "seconds": 79.672
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 79619,
+      "heap": 231168,
+      "stack": 4992,
+      "seconds": 79.922
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 79832,
+      "heap": 232192,
+      "stack": 4992,
+      "seconds": 79.922
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 5,
+      "ms": 80083,
+      "heap": 232192,
+      "stack": 4992,
+      "seconds": 80.172
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 81140,
+      "heap": 232184,
+      "stack": 4992,
+      "seconds": 81.453
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2031,
+      "ready_ms": 2036,
+      "frames": 41,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 2,
+      "draw_max_ms": 46,
+      "seconds": 83.266
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 2,
+      "matches": 0,
+      "seconds": 84.016
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 85124,
+      "heap": 232184,
+      "stack": 4992,
+      "seconds": 85.328
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 4038,
+      "frames": 100,
+      "voice": 28,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 85.328
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 0,
+      "seconds": 85.86
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 5,
+      "matches": 2,
+      "seconds": 87.156
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 87168,
+      "heap": 231168,
+      "stack": 4992,
+      "seconds": 87.422
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 87381,
+      "heap": 232192,
+      "stack": 4992,
+      "seconds": 87.688
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 5,
+      "ms": 90135,
+      "heap": 232192,
+      "stack": 4992,
+      "seconds": 90.297
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 6,
+      "ms": 92500,
+      "heap": 221996,
+      "stack": 4992,
+      "seconds": 92.625
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 95135,
+      "heap": 166244,
+      "stack": 4992,
+      "seconds": 95.25
+    },
+    {
+      "kind": "api_result",
+      "stage": 1,
+      "status": 200,
+      "elapsed_ms": 4480,
+      "seconds": 97.297
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 100156,
+      "heap": 177136,
+      "stack": 4992,
+      "seconds": 100.406
+    },
+    {
+      "kind": "api_result",
+      "stage": 2,
+      "status": 200,
+      "elapsed_ms": 5621,
+      "seconds": 102.985
+    },
+    {
+      "kind": "api_result",
+      "stage": 3,
+      "status": 429,
+      "elapsed_ms": 2247,
+      "seconds": 105.047
+    },
+    {
+      "kind": "request_failure",
+      "stage": 5,
+      "status": 429,
+      "reason": 18,
+      "seconds": 105.047
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 8,
+      "ms": 104961,
+      "heap": 238364,
+      "stack": 4992,
+      "seconds": 105.047
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 105156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 105.313
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 110156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 110.235
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 115156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 115.406
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 120156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 120.313
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 125156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 125.266
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 130156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 130.422
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 135156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 135.313
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 140156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 140.235
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 145156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 145.406
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 150156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 150.344
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 155156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 155.313
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 160156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 160.235
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 165156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 165.438
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 170156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 170.36
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 175156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 175.266
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 180156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 180.235
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 185156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 185.438
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 190156,
+      "heap": 238204,
+      "stack": 4992,
+      "seconds": 190.328
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 194959,
+      "heap": 231584,
+      "stack": 4992,
+      "seconds": 195.031
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 195204,
+      "heap": 231584,
+      "stack": 4992,
+      "seconds": 195.297
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 2006,
+      "frames": 42,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 2,
+      "draw_max_ms": 46,
+      "seconds": 197.141
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2032,
+      "ready_ms": 4038,
+      "frames": 100,
+      "voice": 19,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 2,
+      "draw_max_ms": 46,
+      "seconds": 199.203
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 199.969
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 200252,
+      "heap": 231584,
+      "stack": 4992,
+      "seconds": 200.485
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2039,
+      "ready_ms": 6077,
+      "frames": 101,
+      "voice": 26,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 201.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2001,
+      "ready_ms": 8079,
+      "frames": 101,
+      "voice": 66,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 203.094
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 203.625
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 2,
+      "matches": 0,
+      "seconds": 204.141
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 10079,
+      "frames": 100,
+      "voice": 31,
+      "complete": 1,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 205.172
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 205263,
+      "heap": 231584,
+      "stack": 4992,
+      "seconds": 205.438
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 1,
+      "matches": 1,
+      "seconds": 205.969
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2001,
+      "ready_ms": 12080,
+      "frames": 100,
+      "voice": 41,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 207.25
+    },
+    {
+      "kind": "wake_decision",
+      "decision": 5,
+      "matches": 2,
+      "seconds": 208.797
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 208720,
+      "heap": 230552,
+      "stack": 4992,
+      "seconds": 208.797
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 208933,
+      "heap": 231576,
+      "stack": 4992,
+      "seconds": 209.063
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 5,
+      "ms": 210286,
+      "heap": 231576,
+      "stack": 4992,
+      "seconds": 210.375
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 6,
+      "ms": 212499,
+      "heap": 221444,
+      "stack": 4992,
+      "seconds": 212.719
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 215328,
+      "heap": 176868,
+      "stack": 4992,
+      "seconds": 215.578
+    },
+    {
+      "kind": "api_result",
+      "stage": 1,
+      "status": 200,
+      "elapsed_ms": 4440,
+      "seconds": 217.125
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 220340,
+      "heap": 176828,
+      "stack": 4992,
+      "seconds": 220.563
+    },
+    {
+      "kind": "api_result",
+      "stage": 2,
+      "status": 200,
+      "elapsed_ms": 5210,
+      "seconds": 222.344
+    }
+  ],
+  "storage_mounted": true,
+  "config_loaded": true,
+  "key_configured": true,
+  "wifi_connected": true,
+  "wifi_portal": false,
+  "ready": true,
+  "fault": false,
+  "boot_count": 1,
+  "unexpected_reset": false,
+  "pre_reset_events": [
+    {
+      "kind": "application_start"
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI04"
+    },
+    {
+      "kind": "diagnostic_revision",
+      "value": "D5"
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 1,
+      "state": 0,
+      "ms": 1737,
+      "heap": 278792,
+      "stack": 5252
+    }
+  ],
+  "version": "R13.3",
+  "wake_registered": true,
+  "stopped_by_marker": true,
+  "elapsed_seconds": 223.656,
+  "boot_pass": true
+}

@@ -1,0 +1,47 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": true,
+  "events": [
+    {
+      "kind": "application_start",
+      "seconds": 0.422
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI01",
+      "seconds": 0.422
+    },
+    {
+      "kind": "reset",
+      "value": "0x15",
+      "seconds": 0.422
+    },
+    {
+      "kind": "application_start",
+      "seconds": 1.984
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI01",
+      "seconds": 1.984
+    },
+    {
+      "kind": "ready",
+      "seconds": 9.797
+    }
+  ],
+  "storage_mounted": true,
+  "config_loaded": true,
+  "key_configured": true,
+  "wifi_connected": true,
+  "wifi_portal": false,
+  "ready": true,
+  "fault": true,
+  "boot_count": 2,
+  "unexpected_reset": true,
+  "version": "R13.3",
+  "wake_registered": true,
+  "elapsed_seconds": 45.156,
+  "boot_pass": false
+}

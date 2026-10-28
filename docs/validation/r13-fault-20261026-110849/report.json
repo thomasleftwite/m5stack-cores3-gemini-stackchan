@@ -1,0 +1,6 @@
+{
+  "scope": "allowlisted fault metadata only; no reset or microphone capture",
+  "port": "COM10",
+  "events": [],
+  "elapsed_seconds": 90.032
+}

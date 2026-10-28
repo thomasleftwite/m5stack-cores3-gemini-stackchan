@@ -1,0 +1,43 @@
+{
+  "version": "R13.3",
+  "scope": "full firmware plus authorized FAT initialization; NVS excluded",
+  "port": "COM10",
+  "mode": "preflight",
+  "firmware_bytes": 2119184,
+  "firmware_sha256": "2416fa2616512360fa16a1ac0f942fc67a38b3ae6809d006d24ee0f336f4d7fb",
+  "images": [
+    {
+      "offset": "0x0",
+      "bytes": 15104,
+      "private": false
+    },
+    {
+      "offset": "0x8000",
+      "bytes": 3072,
+      "private": false
+    },
+    {
+      "offset": "0xe000",
+      "bytes": 8192,
+      "private": false
+    },
+    {
+      "offset": "0x10000",
+      "bytes": 2119184,
+      "private": false
+    },
+    {
+      "offset": "0x611000",
+      "bytes": 10350592,
+      "private": true
+    }
+  ],
+  "fat_erase": {
+    "offset": "0x610000",
+    "bytes": 10354688
+  },
+  "written": false,
+  "chip": "ESP32-S3",
+  "flash_MiB": 16,
+  "device_layout_match": true
+}

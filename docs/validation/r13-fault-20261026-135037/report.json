@@ -1,0 +1,646 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": false,
+  "events": [
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 2,
+      "ms": 280059,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 5.172
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 2,
+      "ms": 285059,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 10.063
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 2,
+      "ms": 290059,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 14.969
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 2,
+      "ms": 295059,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 20.156
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 2,
+      "ms": 300059,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 25.125
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 2,
+      "ms": 305059,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 30.031
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 2,
+      "ms": 310059,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 34.953
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 311261,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 36.234
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 313905,
+      "heap": 231816,
+      "stack": 4976,
+      "seconds": 38.844
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 314066,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 39.094
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 5,
+      "ms": 315066,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 40.125
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 315322,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 40.375
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 320098,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 45.063
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 325138,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 50.281
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 330162,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 55.266
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 335202,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 60.234
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 340202,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 65.172
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 342348,
+      "heap": 231816,
+      "stack": 4976,
+      "seconds": 67.469
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 342509,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 67.469
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 343818,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 68.781
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 345258,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 70.359
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 350298,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 75.25
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 355298,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 80.422
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 360298,
+      "heap": 232836,
+      "stack": 4976,
+      "seconds": 85.313
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 365302,
+      "heap": 231816,
+      "stack": 4976,
+      "seconds": 90.438
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 4,
+      "ms": 365303,
+      "heap": 231816,
+      "stack": 4976,
+      "seconds": 90.438
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 365463,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 90.438
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 5,
+      "ms": 370320,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 95.391
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 6,
+      "ms": 375137,
+      "heap": 222700,
+      "stack": 4976,
+      "seconds": 100.031
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 375348,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 100.297
+    },
+    {
+      "kind": "request_failure",
+      "stage": 5,
+      "status": 0,
+      "reason": 3,
+      "seconds": 100.297
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 8,
+      "ms": 375407,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 100.297
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 380348,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 105.438
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 385348,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 110.359
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 390348,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 115.469
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 8,
+      "ms": 395348,
+      "heap": 239460,
+      "stack": 4976,
+      "seconds": 120.422
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 396245,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 121.219
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 400364,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 125.359
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 405404,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 130.469
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 410404,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 135.391
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 415420,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 140.516
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 420444,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 145.406
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 425460,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 150.563
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 430500,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 155.5
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 435524,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 160.453
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 440564,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 165.594
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 445604,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 170.531
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 450604,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 175.719
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 455644,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 180.703
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 460684,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 185.625
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 465699,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 190.828
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 470740,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 195.734
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 475764,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 200.875
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 480781,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 205.813
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 485782,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 210.75
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 490782,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 215.703
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 495804,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 220.844
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 500847,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 225.734
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 505847,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 230.891
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 510860,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 235.766
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 515883,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 240.922
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 520924,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 245.844
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 525940,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 251.078
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 530980,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 255.953
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 535980,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 260.891
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 541004,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 266.094
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 546004,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 271.0
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 551020,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 275.938
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 556044,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 281.156
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 561060,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 286.078
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 566100,
+      "heap": 232840,
+      "stack": 4976,
+      "seconds": 291.0
+    }
+  ],
+  "stopped_by_marker": true,
+  "elapsed_seconds": 292.297
+}

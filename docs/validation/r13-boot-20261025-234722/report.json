@@ -1,0 +1,17 @@
+{
+  "scope": "device allowlisted boot state; no microphone test",
+  "port": "COM10",
+  "storage_mounted": true,
+  "config_loaded": true,
+  "key_configured": true,
+  "wifi_connected": true,
+  "wifi_portal": false,
+  "ready": true,
+  "fault": true,
+  "boot_count": 2,
+  "unexpected_reset": true,
+  "version": "R13.3",
+  "wake_registered": false,
+  "elapsed_seconds": 45.203,
+  "boot_pass": false
+}

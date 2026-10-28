@@ -1,0 +1,19 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": true,
+  "expected_version": "R13.4",
+  "events": [],
+  "storage_mounted": false,
+  "config_loaded": false,
+  "key_configured": false,
+  "wifi_connected": false,
+  "wifi_portal": false,
+  "ready": false,
+  "fault": false,
+  "boot_count": 0,
+  "unexpected_reset": false,
+  "error_kind": "SerialUnavailable",
+  "elapsed_seconds": 0.0,
+  "boot_pass": false
+}

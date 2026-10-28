@@ -5,7 +5,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const firmware = path.join(root, 'firmware');
 const entries = [];
 function add(relative, file) {
-  entries.push({ name: path.basename(relative), path: relative.replaceAll('\\', '/'), description: 'R13.3 / FAT対応・検証範囲は記録参照', language: /\.[ch](pp)?$/.test(relative) ? 'cpp' : relative.endsWith('.json') ? 'json' : relative.endsWith('.md') ? 'markdown' : 'text', content: fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '') });
+  entries.push({ name: path.basename(relative), path: relative.replaceAll('\\', '/'), description: 'R13.4 / S08・SimpleVox v3・検証範囲は記録参照', language: /\.[ch](pp)?$/.test(relative) ? 'cpp' : relative.endsWith('.json') ? 'json' : relative.endsWith('.md') ? 'markdown' : 'text', content: fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '') });
 }
 function walk(relative) {
   for (const item of fs.readdirSync(path.join(firmware, relative), { withFileTypes: true })) {
@@ -15,7 +15,7 @@ function walk(relative) {
   }
 }
 for (const name of fs.readdirSync(firmware).filter(n => n.endsWith('.md') || n === 'platformio.ini').sort()) add(name, path.join(firmware, name));
-for (const directory of ['src', 'certs', 'tests', 'tools', 'partitions']) walk(directory);
+for (const directory of ['src', 'certs', 'tests', 'tools', 'partitions', 'lib']) walk(directory);
 add('data/config.example.json', path.join(firmware, 'data/config.example.json'));
 for (const name of ['VOICE_PIPELINE_R13.md', 'R13_VALIDATION.md']) {
   const file = path.join(root, 'docs', name);
@@ -33,6 +33,9 @@ for (const dir of ['src', 'certs', 'partitions']) {
   for (const name of fs.readdirSync(path.join(firmware, dir))) fs.copyFileSync(path.join(firmware, dir, name), path.join(root, dir, name));
 }
 fs.copyFileSync(path.join(firmware, 'platformio.ini'), path.join(root, 'platformio.ini'));
+// The historical root PlatformIO build needs the same pinned C dependency.
+if (fs.existsSync(path.join(firmware, 'lib', 'libfvad'))) fs.cpSync(path.join(firmware, 'lib', 'libfvad'), path.join(root, 'lib', 'libfvad'), { recursive: true });
+if (fs.existsSync(path.join(firmware, 'lib', 'SimpleVox'))) fs.cpSync(path.join(firmware, 'lib', 'SimpleVox'), path.join(root, 'lib', 'SimpleVox'), { recursive: true });
 fs.copyFileSync(path.join(firmware, 'data/config.example.json'), path.join(root, 'data/config.example.json'));
 for (const entry of entries) {
   const file = entry.path.startsWith('docs/') ? path.join(root, entry.path) : path.join(firmware, entry.path);

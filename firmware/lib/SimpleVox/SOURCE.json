@@ -1,0 +1,44 @@
+{
+  "repository": "https://github.com/thomasleftwite/stackchan-chatgpt",
+  "commit": "fcdd3b214e29f2efdcf31c12a691e7c9552b6e31",
+  "subset": [
+    {
+      "path": "lib/SimpleVox/LICENSE",
+      "git_blob_sha": "bf1cb79fdfe9d31a62edae87dd744f36bb379132"
+    },
+    {
+      "path": "lib/SimpleVox/ThirdPartyNotices.md",
+      "git_blob_sha": "e06a360403296649a3c1d7b1983117dbaf8eaa24"
+    },
+    {
+      "path": "lib/SimpleVox/src/utility/detail/simplevox_dtw.h",
+      "git_blob_sha": "c4cbdda16dee52a6006b7c8b29c77739ca5dcd42"
+    },
+    {
+      "path": "lib/SimpleVox/src/utility/simplevox_dtw.cpp",
+      "git_blob_sha": "d89b5bec6174db8439647e46a93c2c7b941483ba"
+    },
+    {
+      "path": "lib/SimpleVox/src/utility/simplevox_dtw.h",
+      "git_blob_sha": "4ea97231b477412c0f9b1087c3118f99c2ba5a72"
+    },
+    {
+      "path": "lib/SimpleVox/src/utility/simplevox_feature.h",
+      "git_blob_sha": "e4abaf9b0ef371179cf9149d6c3a89235c0882c0"
+    },
+    {
+      "path": "lib/SimpleVox/src/utility/simplevox_mfcc.cpp",
+      "git_blob_sha": "d63a6c4df5a56f28233b3d09bd3e9170f3f3cac6"
+    },
+    {
+      "path": "lib/SimpleVox/src/utility/simplevox_mfcc.h",
+      "git_blob_sha": "b1549a75f0bdf337606c33bf709ddd8e6ddcdfa7"
+    }
+  ],
+  "local_changes": [
+    "MFCC log10 Mel energy floor 1e-12 for silence",
+    "minimal umbrella header and PlatformIO source filter; no VAD",
+    "S03 diagnostic DSP dispatch/ANSI selector and workspace alignment accessor; default dispatch unchanged",
+    "S04 allocate three extra floats and align FFT workspace to 16 bytes while retaining the allocation owner"
+  ]
+}

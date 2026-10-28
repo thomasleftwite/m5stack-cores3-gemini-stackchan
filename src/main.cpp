@@ -6,7 +6,20 @@
 #include "AudioTask.h"
 #include "GeminiClient.h"
 #include "ServoControl.h"
-#include "LocalWake.h"
+#include "ReferenceWake.h"
+#include "EnrollmentWindow.h"
+#include "RuntimeTrace.h"
+#include "RequestFailure.h"
+#include <esp_system.h>
+
+// Diagnostic images must explicitly opt in to suppressing question capture.
+#ifndef STACKCHAN_WAKE_DIAGNOSTIC_HOLD
+#define STACKCHAN_WAKE_DIAGNOSTIC_HOLD 0
+#endif
+#if STACKCHAN_WAKE_DIAGNOSTIC_HOLD != 0 && STACKCHAN_WAKE_DIAGNOSTIC_HOLD != 1
+#error "STACKCHAN_WAKE_DIAGNOSTIC_HOLD must be 0 or 1"
+#endif
+
 static void logWiFiEvent(arduino_event_id_t event, arduino_event_info_t info) {
     switch (event) {
         case ARDUINO_EVENT_WIFI_STA_CONNECTED:
@@ -113,17 +126,36 @@ static String getFormattedJSTTime() {
 
 
 enum class Mode { Ready, Sleep, Setting, Enroll, Cue, Recording, Busy, Speaking, Error, MicError };
+static AvatarMode faceModeFor(Mode mode) {
+    switch (mode) {
+        case Mode::Sleep: return AvatarMode::Sleep;
+        case Mode::Cue: case Mode::Recording: return AvatarMode::Listening;
+        case Mode::Busy: return AvatarMode::Thinking;
+        case Mode::Speaking: return AvatarMode::Speaking;
+        default: return AvatarMode::Ready;
+    }
+}
 AppConfig g_config;
 StackChanAvatar g_avatar;
-LocalWake wake;
+ReferenceWake wake;
 Mode mode = Mode::Ready;
 conversation::CaptureGate gate;
 uint32_t lastActivity = 0, entered = 0, lastDraw = 0;
 uint32_t errorDeadline = 0;
+uint32_t wakeDiagnosticAt = 0, wakeDrawMaxMs = 0;
+ReferenceWake::Diagnostics wakeBaseline;
 Mode micResume = Mode::Ready;
 bool touching = false, cancelRequested = false;
 String notice;
 int16_t frame[320];
+enum class EnrollmentPhase { Calibrating, Cue, Listening, Analyzing, VerificationCalibration, VerificationWarmup, Verifying, Saved };
+EnrollmentPhase enrollmentPhase = EnrollmentPhase::Calibrating;
+EnrollmentWindow enrollmentWindow;
+uint32_t enrollmentVerificationAt = 0;
+unsigned enrollmentVerificationFrames = 0;
+unsigned enrollmentFirst=0, enrollmentEnd=0, enrollmentCursor=0, enrollmentClipped=0;
+float enrollmentLevelSum=0,enrollmentPeak=0;
+unsigned enrollmentDc=0;
 
 static void setEmotion(AvatarEmotion e) {
     g_avatar.setEmotion(e); if (g_config.servo_enabled) ServoControl::setEmotion(e);
@@ -133,35 +165,207 @@ static void ready(const String& message = "") {
     GeminiClient::clear(); wake.cancelEnrollment(); wake.resetDetection();
     M5.Display.setBrightness(100); mode = Mode::Ready; entered = lastActivity = millis();
     bool micOk = AudioTask::setMicEnabled(wake.registered());
+    AudioTask::beginListeningCalibration();
+    wakeDiagnosticAt = millis(); wakeDrawMaxMs = 0; wakeBaseline = wake.diagnostics();
     notice = !micOk ? "マイクの準備に失敗しました" : message;
     setEmotion(EMOTION_NORMAL);
 }
 static void sleepNow() {
     AudioTask::setMicEnabled(false); AudioTask::clearRecording();
     GeminiClient::clear(true); wake.resetDetection(); mode = Mode::Sleep;
-    setEmotion(EMOTION_SLEEP); M5.Display.setBrightness(0);
+    setEmotion(EMOTION_SLEEP);
+    g_avatar.setMode(AvatarMode::Sleep); g_avatar.setStatus("");
+    g_avatar.setLipSyncLevel(0); g_avatar.update();
+    M5.Display.setBrightness(18);
 }
 static void enterSetting() {
     wake.resetDetection(); AudioTask::setMicEnabled(false); mode = Mode::Setting;
 }
+static void beginQuestion() {
+    AudioTask::stopRecording(); AudioTask::clearRecording(); wake.resetDetection();
+    if (!AudioTask::playCue()) { ready("開始音を再生できません"); return; }
+    mode=Mode::Cue; entered=lastActivity=millis(); notice=""; lastDraw=0;
+}
+static void serviceQuestionCue() {
+    if (mode != Mode::Cue) return;
+    if (AudioTask::isPlaying()) return;
+    if (!AudioTask::setMicEnabled(true)) ready("マイクの準備に失敗しました");
+    else { AudioTask::startRecording(); gate.reset(millis()); mode=Mode::Recording; }
+}
+static String enrollmentRetentionMessage(const String& message) {
+    if (wake.publicationUncertain()) return "保存結果を確認できません。再起動後に確認してください";
+    return message + (wake.registered() ? "。旧登録を保持しています" : "。未登録のままです");
+}
 static void microphoneError(Mode resume) {
     AudioTask::stopRecording(); AudioTask::setMicEnabled(false);
     AudioTask::clearRecording();
-    micResume = resume; mode = Mode::MicError; notice = "マイクを再準備してください";
+    if (resume == Mode::Enroll) wake.cancelEnrollment();
+    micResume = resume; mode = Mode::MicError;
+    notice = resume == Mode::Enroll ? enrollmentRetentionMessage("マイクを再準備し、最初から登録してください") : String("マイクを再準備してください");
+    lastDraw = 0;
+}
+static void serviceReadyWake(uint32_t now) {
+    if (mode != Mode::Ready) return;
+    if (now - lastActivity >= conversation::IdleMs) { sleepNow(); return; }
+    if (!wake.registered()) return;
+    if (!AudioTask::readFrame(frame)) { microphoneError(Mode::Ready); return; }
+    // Calibrate during the existing return-to-Ready guard, not afterwards.
+    if (millis() - entered < 1200 || !wake.detectWindow(frame)) return;
+#if STACKCHAN_WAKE_DIAGNOSTIC_HOLD
+    lastActivity = millis(); wake.resetDetection();
+    Serial.println("[DEBUG-r13w2] held=1");
+#else
+    // Use the same cue/capture path as every question; it clears the wake window
+    // and prior PCM before playback, then waits for the cue before recording.
+    beginQuestion();
+#endif
+}
+static void enrollmentFailed(const String& message) {
+    AudioTask::stopPlayback(); AudioTask::stopRecording(); AudioTask::clearRecording();
+    wake.cancelEnrollment(); enterSetting(); notice=enrollmentRetentionMessage(message); lastDraw=0;
+}
+static bool prepareEnrollment() {
+    AudioTask::stopRecording(); AudioTask::clearRecording();
+    if (!AudioTask::setMicEnabled(true)) return false;
+    AudioTask::beginListeningCalibration(); wake.resetDetection();
+    enrollmentWindow.reset();
+    enrollmentPhase=EnrollmentPhase::Calibrating;
+    notice="背景音を測定中。まだ話さないでください"; lastDraw=0;
+    return true;
+}
+static void beginEnrollmentSession() {
+    wake.beginEnrollment(); mode = Mode::Enroll;
+    entered = lastActivity = millis(); notice = "";
+    if (!prepareEnrollment()) microphoneError(Mode::Enroll);
+}
+static void retryMicrophone() {
+    if (!AudioTask::setMicEnabled(true)) return;
+    if (micResume == Mode::Ready) ready();
+    // microphoneError cancels the previous transaction. A retry must create a
+    // new session and collect all three takes before verification can resume.
+    else beginEnrollmentSession();
+}
+static void cancelEnrollmentSession() {
+    if (enrollmentPhase == EnrollmentPhase::Saved) { ready(notice); return; }
+    enrollmentFailed("登録を中止しました");
+}
+static void serviceEnrollment() {
+    if (mode != Mode::Enroll) return;
+    if (enrollmentPhase == EnrollmentPhase::Saved) {
+        if (millis() - enrollmentVerificationAt >= 3000) ready(notice);
+        return;
+    }
+    if (enrollmentPhase == EnrollmentPhase::VerificationCalibration || enrollmentPhase == EnrollmentPhase::VerificationWarmup || enrollmentPhase == EnrollmentPhase::Verifying) {
+        if (!wake.enrollmentCandidateReady()) { enrollmentFailed("登録候補を確認できません。最初から登録してください"); return; }
+        const bool verifying = enrollmentPhase == EnrollmentPhase::Verifying;
+        if (verifying && millis() - enrollmentVerificationAt >= 30000) {
+            enrollmentFailed("待機時に呼びかけを確認できませんでした"); return;
+        }
+        if (!AudioTask::readFrame(frame)) { microphoneError(Mode::Enroll); return; }
+        if (enrollmentPhase == EnrollmentPhase::VerificationCalibration) {
+            if (millis() - enrollmentVerificationAt >= 1200) {
+                wake.resetDetection(); enrollmentVerificationFrames = 0;
+                enrollmentPhase = EnrollmentPhase::VerificationWarmup;
+                notice = "背景音を確認中。静かに待ってください"; lastDraw = 0;
+            }
+            return;
+        }
+        // Feed the exact rolling input path while warming, but only an explicit
+        // post-prompt match may authorize saving the candidate.
+        const bool matched = wake.verifyEnrollmentWindow(frame, verifying);
+        if (!verifying) {
+            if (++enrollmentVerificationFrames >= 50) {
+                enrollmentPhase = EnrollmentPhase::Verifying; enrollmentVerificationAt = millis();
+                notice = "同じ呼びかけを1回話してください"; lastDraw = 0;
+            }
+        } else if (matched) {
+            if (wake.commitEnrollment()) {
+                AudioTask::setMicEnabled(false);
+                enrollmentPhase = EnrollmentPhase::Saved; enrollmentVerificationAt = millis();
+                notice = "呼びかけを検出し、保存しました"; lastDraw = 0;
+            }
+            else enrollmentFailed("保存できませんでした");
+        }
+        return;
+    }
+    if (enrollmentPhase==EnrollmentPhase::Cue) {
+        if (!AudioTask::isPlaying()) {
+            if (!AudioTask::setMicEnabled(true)) { microphoneError(Mode::Enroll); return; }
+            // The beep has finished; keep the measured pre-beep background.
+            // No post-beep recalibration or discarded second of user speech.
+            AudioTask::startRecording(); enrollmentPhase=EnrollmentPhase::Listening;
+            notice="5秒間録音します。同じ呼びかけを1回話してください"; lastDraw=0;
+        }
+        return;
+    }
+    if (enrollmentPhase==EnrollmentPhase::Analyzing) {
+        size_t count=0; const int16_t* pcm=AudioTask::getRecordedPCM(&count);
+        if (!pcm || count<enrollmentEnd*320) { enrollmentFailed("録音を確認できません。最初から登録してください"); return; }
+        const int16_t* part=pcm+enrollmentCursor*320;
+        float level=EnrollmentWindow::level(part); enrollmentLevelSum+=level; enrollmentPeak=fmaxf(enrollmentPeak,level);
+        int32_t dc=0; for(unsigned i=0;i<320;++i) dc+=part[i]; dc/=320;
+        enrollmentDc=std::max(enrollmentDc,unsigned(dc<0 ? -dc : dc));
+        for (unsigned i=0;i<320;++i) if (part[i]>32000 || part[i]<-32000) ++enrollmentClipped;
+        if (++enrollmentCursor<enrollmentEnd) return;
+#ifdef ARDUINO
+        Serial.printf("[DEBUG-sv2] take=%u noise=%u warm=%u gate=%u rms=%u peak=%u dc=%u clips=%u\n",wake.enrollmentCount()+1,
+            unsigned(enrollmentWindow.backgroundRms()),unsigned(enrollmentWindow.warmedBackgroundRms()),unsigned(enrollmentWindow.triggerRms()),
+            unsigned(enrollmentLevelSum/(enrollmentEnd-enrollmentFirst)),unsigned(enrollmentPeak),enrollmentDc,enrollmentClipped);
+#endif
+        if (enrollmentClipped>=100) { enrollmentFailed("音が大きすぎました。最初から登録してください"); return; }
+        int result=wake.submitEnrollment(pcm+enrollmentFirst*320,(enrollmentEnd-enrollmentFirst)*320);
+        runtimetrace::mark(runtimetrace::EnrollmentResult, unsigned(result+2));
+        AudioTask::clearRecording();
+        if (result==2) {
+            if (!wake.enrollmentCandidateReady()) { enrollmentFailed("登録候補を確認できません。最初から登録してください"); return; }
+            if (!AudioTask::setMicEnabled(true)) { microphoneError(Mode::Enroll); return; }
+            AudioTask::beginListeningCalibration(); wake.resetDetection();
+            enrollmentPhase = EnrollmentPhase::VerificationCalibration; enrollmentVerificationAt = millis();
+            enrollmentVerificationFrames = 0;
+            notice = "3回の声を確認しました。まだ話さないでください"; lastDraw = 0;
+        }
+        else if (result==-2) enrollmentFailed("登録候補を作成できませんでした");
+        else if (result==-1) enrollmentFailed("3回の声が一致しません。最初から登録してください");
+        else if (!prepareEnrollment()) microphoneError(Mode::Enroll);
+        return;
+    }
+    if (!AudioTask::readFrame(frame)) { microphoneError(Mode::Enroll); return; }
+    if (enrollmentPhase==EnrollmentPhase::Calibrating) {
+        if (enrollmentWindow.background(frame)) {
+            if (!AudioTask::playCue()) { enrollmentFailed("開始音を再生できません"); return; }
+            enrollmentPhase=EnrollmentPhase::Cue;
+            notice="合図の後に同じ呼びかけを話してください"; lastDraw=0;
+        }
+        return;
+    }
+    if (!enrollmentWindow.capture(frame)) return;
+    AudioTask::stopRecording(); AudioTask::setMicEnabled(false);
+    unsigned narrowFirst=0,narrowEnd=0;
+    bool narrowOk=enrollmentWindow.range(narrowFirst,narrowEnd,10);
+    bool cropOk=enrollmentWindow.range(enrollmentFirst,enrollmentEnd);
+#ifdef ARDUINO
+    Serial.printf("[DEBUG-e06] take=%u first=%u end=%u narrow_first=%u narrow_end=%u\n",wake.enrollmentCount()+1,
+        cropOk ? enrollmentFirst : 0,cropOk ? enrollmentEnd : 0,narrowOk ? narrowFirst : 0,narrowOk ? narrowEnd : 0);
+#else
+    (void)narrowOk;
+#endif
+    if (!cropOk) {
+        enrollmentFailed("声の区間を確認できません。最初から登録してください"); return;
+    }
+    enrollmentCursor=enrollmentFirst; enrollmentClipped=0;
+    enrollmentLevelSum=enrollmentPeak=0; enrollmentDc=0;
+    enrollmentPhase=EnrollmentPhase::Analyzing; notice="録音を切り出しています"; lastDraw=0;
 }
 static void requestError() {
+    Serial.printf("[DEBUG-r13d2] api_stage=%u status=%d reason=%u\n",
+        unsigned(GeminiClient::stage()), GeminiClient::httpStatus(),
+        unsigned(requestfailure::classify(GeminiClient::error())));
     mode = Mode::Error; entered = millis(); notice = "";
     errorDeadline = conversation::retryDeadline(entered, GeminiClient::retryWaitMs());
     setEmotion(EMOTION_SAD);
 }
 static void drawMenu(const String& title, const String& action, const String& detail) {
-    M5.Display.fillScreen(0x18E3); M5.Display.setFont(&fonts::efontJA_16);
-    M5.Display.setTextColor(TFT_WHITE, 0x18E3); M5.Display.setTextSize(1);
-    M5.Display.setCursor(12, 15); M5.Display.println(title);
-    M5.Display.setCursor(12, 45); M5.Display.println(detail);
-    M5.Display.fillRoundRect(10, 85, 300, 60, 8, 0x249f);
-    M5.Display.setCursor(20, 105); M5.Display.println(action);
-    M5.Display.setCursor(20, 195); M5.Display.println("戻る / キャンセル");
+    g_avatar.drawMenu(title, action, detail);
 }
 static String stageText() {
     if (cancelRequested) return "キャンセル処理中";
@@ -182,10 +386,21 @@ static String requestErrorText() {
     if (code <= 0) return "通信が完了しませんでした。接続を確認";
     return "応答を確認できません。再試行できます";
 }
+static String readyStatus() {
+#if STACKCHAN_WAKE_DIAGNOSTIC_HOLD
+    return String("診断中：質問録音は停止") + (notice.length() ? String(" / ") + notice : String(""));
+#else
+    return ""; // UI04 keeps the normal Ready face free of status text.
+#endif
+}
 void setup() {
     auto cfg = M5.config(); cfg.serial_baudrate = 115200; cfg.internal_spk = true; cfg.internal_mic = true;
     M5.begin(cfg);
-    Serial.println("[System] CoreS3 file conversation R13.3");
+    Serial.println("[System] CoreS3 file conversation R13.4");
+    Serial.println("[UI] revision=UI04");
+    Serial.println("[DIAG] revision=S08");
+    Serial.printf("[Wake] diagnostic_hold=%u\n", unsigned(STACKCHAN_WAKE_DIAGNOSTIC_HOLD));
+    runtimetrace::mark(runtimetrace::Boot, unsigned(esp_reset_reason()));
     if (!ConfigManager::load(g_config)) {
         M5.Display.println("Settings storage unavailable; no automatic format.");
         while (true) delay(100);
@@ -207,30 +422,38 @@ void setup() {
     Serial.println("[System] ready=1");
 }
 void loop() {
+    static int traceMode = -1;
+    static uint32_t traceTime = 0;
+    if (traceMode != int(mode)) {
+        traceMode = int(mode); runtimetrace::mark(runtimetrace::ModeChanged, unsigned(mode));
+    }
+    if (millis() - traceTime >= 5000) {
+        traceTime = millis(); runtimetrace::mark(runtimetrace::Tick, unsigned(mode));
+    }
     M5.update();
     uint32_t now = millis();
     bool down = M5.Touch.getCount() > 0;
     bool tap = (down && !touching) || M5.BtnA.wasClicked();
     touching = down;
-    int x = down ? M5.Touch.getDetail().x : 0, y = down ? M5.Touch.getDetail().y : 200;
+    int y = down ? M5.Touch.getDetail().y : 200;
     if (tap) {
         lastActivity = now;
         switch (mode) {
             case Mode::Sleep: ready(); break;
-            case Mode::Ready: if (x >= 215 && y < 45) enterSetting(); break;
+            case Mode::Ready: enterSetting(); break;
             case Mode::Setting:
                 if (y >= 85 && y <= 145) {
-                    wake.beginEnrollment(); mode = Mode::Enroll; notice = "";
-                    if (!AudioTask::setMicEnabled(true)) { mode = Mode::Setting; notice = "マイクの準備に失敗しました"; }
+                    beginEnrollmentSession();
                 } else if (y >= 180) ready();
                 break;
-            case Mode::Enroll: if (y >= 180) ready("登録を中止しました"); break;
+            case Mode::Enroll: if (y >= 180) cancelEnrollmentSession(); break;
             case Mode::MicError:
                 if (y >= 85 && y <= 145) {
-                    if (AudioTask::setMicEnabled(true)) {
-                        wake.resetDetection(); mode = micResume; entered = lastActivity = millis(); notice = "";
-                    }
-                } else if (y >= 180) ready();
+                    retryMicrophone();
+                } else if (y >= 180) {
+                    if (micResume == Mode::Enroll) cancelEnrollmentSession();
+                    else ready();
+                }
                 break;
             case Mode::Busy: cancelRequested = true; GeminiClient::cancel(); break;
             case Mode::Error:
@@ -246,27 +469,11 @@ void loop() {
     now = millis(); // A transition may have advanced entered/lastActivity during I2S setup.
     AudioTask::servicePlayback();
     if (mode == Mode::Ready) {
-        if (now - lastActivity >= conversation::IdleMs) sleepNow();
-        else if (wake.registered() && now - entered >= 1200) {
-            if (!AudioTask::readFrame(frame)) microphoneError(Mode::Ready);
-            else if (wake.detect(frame, AudioTask::isVoiceDetected())) {
-                lastActivity = now; wake.resetDetection();
-                if (AudioTask::playCue()) mode = Mode::Cue;
-                else ready("開始音を再生できません");
-            }
-        }
+        serviceReadyWake(now);
     } else if (mode == Mode::Enroll) {
-        if (!AudioTask::readFrame(frame)) microphoneError(Mode::Enroll);
-        else {
-            int result = wake.enroll(frame, AudioTask::isVoiceDetected());
-            if (result == 2) ready("呼びかけを保存しました");
-            else if (result == -2) ready("保存できません。旧登録を保持");
-            else if (result == -1) { notice = "同じ言葉でもう一度"; lastDraw = 0; }
-            else if (result == 1) { notice = "次も同じ言葉を話してください"; lastDraw = 0; }
-        }
-    } else if (mode == Mode::Cue && !AudioTask::isPlaying()) {
-        if (!AudioTask::setMicEnabled(true)) ready("マイクの準備に失敗しました");
-        else { AudioTask::startRecording(); gate.reset(millis()); mode = Mode::Recording; }
+        serviceEnrollment();
+    } else if (mode == Mode::Cue) {
+        serviceQuestionCue();
     } else if (mode == Mode::Recording) {
         if (!AudioTask::readFrame(frame)) microphoneError(Mode::Ready);
         else {
@@ -297,23 +504,42 @@ void loop() {
     } else if (mode == Mode::Speaking && !AudioTask::isPlaying()) ready();
     else if (mode == Mode::Error && conversation::deadlineReached(now, errorDeadline)) ready("処理を終了しました");
 
-    if (mode != Mode::Sleep && millis() - lastDraw >= 50) {
+    if (mode == Mode::Ready && millis() - wakeDiagnosticAt >= 2000) {
+        const auto& d = wake.diagnostics();
+        char diagnosticLine[256];
+        const int diagnosticBytes = snprintf(diagnosticLine, sizeof(diagnosticLine), "[DEBUG-r13w1] window_ms=%u ready_ms=%u frames=%u voice=%u complete=%u short=%u clipped=%u long=%u matched=%u last_matches=%u draw_max_ms=%u\n",
+            unsigned(millis() - wakeDiagnosticAt), unsigned(millis() - entered),
+            unsigned(d.frames - wakeBaseline.frames), unsigned(d.voice - wakeBaseline.voice),
+            unsigned(d.complete - wakeBaseline.complete), unsigned(d.tooShort - wakeBaseline.tooShort),
+            unsigned(d.clipped - wakeBaseline.clipped), unsigned(d.tooLong - wakeBaseline.tooLong),
+            unsigned(d.matched - wakeBaseline.matched), d.lastMatches, unsigned(wakeDrawMaxMs));
+        if (diagnosticBytes > 0 && diagnosticBytes < sizeof(diagnosticLine) && Serial.availableForWrite() >= diagnosticBytes)
+            Serial.write(reinterpret_cast<const uint8_t*>(diagnosticLine), diagnosticBytes);
+        wakeBaseline = d; wakeDiagnosticAt = millis(); wakeDrawMaxMs = 0;
+    }
+    // A full face transfer takes ~46 ms. Leave time for 50 microphone frames/s.
+    const uint32_t drawInterval = (mode == Mode::Ready || mode == Mode::Recording) ? 100 : 50;
+    if (mode != Mode::Sleep && millis() - lastDraw >= drawInterval) {
+        const uint32_t drawStarted = millis();
         lastDraw = millis();
         if (mode == Mode::Setting) drawMenu("設定", "ウェイクワード登録 / 更新", notice.isEmpty() ? "同じ人が同じ呼びかけを3回録音" : notice);
-        else if (mode == Mode::Enroll) drawMenu("呼びかけの登録", String(wake.enrollmentCount() + 1) + " / 3  同じ言葉を話してください", notice);
+        else if (mode == Mode::Enroll) drawMenu("呼びかけの登録",
+            enrollmentPhase == EnrollmentPhase::Saved ? String("登録できました") :
+            enrollmentPhase == EnrollmentPhase::VerificationCalibration || enrollmentPhase == EnrollmentPhase::VerificationWarmup ? String("静かに待ってください") :
+            enrollmentPhase == EnrollmentPhase::Verifying ? String("同じ呼びかけを1回") :
+            String(wake.enrollmentCount() + 1) + (enrollmentPhase == EnrollmentPhase::Listening ? " / 3  5秒間録音中" : enrollmentPhase == EnrollmentPhase::Analyzing ? " / 3  録音を確認中" : " / 3  背景音・合図の準備"), notice);
         else if (mode == Mode::MicError) drawMenu("録音できませんでした", "マイクを再準備", notice);
         else if (mode == Mode::Error) drawMenu("応答できませんでした", "失敗した処理から再試行", notice.isEmpty() ? requestErrorText() : notice);
         else {
-            String status = mode == Mode::Ready ? (notice.isEmpty() ? (wake.registered() ? "呼びかけを待っています" : "設定から呼びかけを登録してください") : notice) :
+            g_avatar.setMode(faceModeFor(mode));
+            String status = mode == Mode::Ready ? readyStatus() :
                 mode == Mode::Cue ? "合図の後に話してください" : mode == Mode::Recording ? "録音中 / タッチで中止" :
                 mode == Mode::Speaking ? "お話し中 / タッチで中止" : stageText() + " / タッチで中止";
             g_avatar.setStatus(status); g_avatar.setLipSyncLevel(mode == Mode::Speaking ? AudioTask::getLiveRMS() * 2.5f : 0);
             g_avatar.update();
-            if (mode == Mode::Ready) {
-                M5.Display.fillRoundRect(220, 5, 95, 32, 5, 0x249f);
-                M5.Display.setFont(&fonts::efontJA_16); M5.Display.setCursor(250, 12); M5.Display.print("設定");
-            }
         }
+        const uint32_t drawMs = millis() - drawStarted;
+        if (drawMs > wakeDrawMaxMs) wakeDrawMaxMs = drawMs;
     }
     if (g_config.servo_enabled) { ServoControl::setLipSync(mode == Mode::Speaking ? AudioTask::getLiveRMS() : 0); ServoControl::update(); }
     delay(1);

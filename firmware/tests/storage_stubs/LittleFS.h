@@ -9,6 +9,7 @@
 struct StorageMock {
     std::map<std::string, std::vector<uint8_t>> files;
     bool failRename = false, shortWrite = false;
+    std::string failReadPath, failRemovePath;
 };
 inline StorageMock storage;
 class File {
@@ -22,7 +23,7 @@ class File {
     explicit operator bool() const { return open_; }
     size_t size() const { return open_ ? storage.files[path_].size() : 0; }
     size_t read(uint8_t* data, size_t count) {
-        if (!open_) return 0; auto& bytes = storage.files[path_]; count = std::min(count, bytes.size() - at_);
+        if (!open_ || path_==storage.failReadPath) return 0; auto& bytes = storage.files[path_]; count = std::min(count, bytes.size() - at_);
         memcpy(data, bytes.data() + at_, count); at_ += count; return count;
     }
     size_t write(const uint8_t* data, size_t count) {
@@ -34,7 +35,7 @@ class File {
 struct LittleFSMock {
     File open(const char* path, const char* mode) { return File(path, mode); }
     bool exists(const char* path) { return storage.files.count(path) != 0; }
-    bool remove(const char* path) { return storage.files.erase(path) != 0; }
+    bool remove(const char* path) { return path!=storage.failRemovePath && storage.files.erase(path) != 0; }
     bool rename(const char* a, const char* b) {
         if (storage.failRename || !exists(a)) return false;
         storage.files[b] = storage.files[a]; storage.files.erase(a); return true;

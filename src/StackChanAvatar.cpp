@@ -14,6 +14,14 @@ void StackChanAvatar::setEmotion(AvatarEmotion emotion) {
     _emotion = emotion;
 }
 
+void StackChanAvatar::setMode(AvatarMode mode) {
+    if (_mode == mode) return;
+    _mode = mode;
+    _isBlinking = false; _eyeOpen = 1.0f; _lastBlinkTime = millis();
+    _gazeX = _gazeY = _mouthOpen = _targetMouthOpen = 0;
+    _eyebrowAngle = _eyebrowY = 0;
+}
+
 void StackChanAvatar::setLipSyncLevel(float level) {
     _targetMouthOpen = constrain(level, 0.0f, 1.0f);
 }
@@ -29,7 +37,16 @@ void StackChanAvatar::triggerBlink() {
 }
 
 void StackChanAvatar::update() {
+    _menuVisible = false;
     uint32_t now = millis();
+    switch (_mode) {
+        case AvatarMode::Sleep: _emotion = EMOTION_SLEEP; break;
+        case AvatarMode::Ready: _emotion = EMOTION_NORMAL; break;
+        case AvatarMode::Listening: _emotion = EMOTION_LISTENING; break;
+        case AvatarMode::Thinking: _emotion = EMOTION_THINKING; break;
+        case AvatarMode::Speaking: _emotion = EMOTION_TALKING; break;
+    }
+    if (_mode != AvatarMode::Speaking) _targetMouthOpen = 0;
 
     // 1. 自動瞬きロジック
     if (_emotion != EMOTION_SLEEP) {
@@ -80,7 +97,14 @@ void StackChanAvatar::update() {
         case EMOTION_THINKING:
             targetAngle = 10.0f;
             targetEyebrowY = -4.0f;
-            _gazeX = 0.5f; _gazeY = -0.5f;
+            _gazeX = 0.5f + 0.2f * sinf(now / 700.0f); _gazeY = -0.5f;
+            break;
+        case EMOTION_LISTENING:
+            targetEyebrowY = -10.0f;
+            break;
+        case EMOTION_TALKING:
+            targetAngle = -8.0f;
+            targetEyebrowY = -3.0f;
             break;
         default:
             targetAngle = 0.0f;
@@ -97,11 +121,31 @@ void StackChanAvatar::update() {
     drawEyes();
     drawMouth();
 
-    _canvas.setFont(&fonts::efontJA_12);
-    _canvas.setTextColor(TFT_WHITE, 0x18E3);
-    _canvas.setCursor(5, 216);
-    _canvas.print(_status);
+
+    if (!_status.isEmpty()) {
+        _canvas.setFont(&fonts::efontJA_12);
+        _canvas.setTextColor(TFT_WHITE, 0x18E3);
+        _canvas.setCursor(5, 216);
+        _canvas.print(_status);
+    }
     // 5. 画面へ一括転送
+    _canvas.pushSprite(0, 0);
+}
+
+void StackChanAvatar::drawMenu(const String& title, const String& action, const String& detail) {
+    if (_menuVisible && title == _menuTitle && action == _menuAction && detail == _menuDetail) return;
+    _menuTitle = title; _menuAction = action; _menuDetail = detail; _menuVisible = true;
+    _canvas.fillScreen(0x18E3);
+    _canvas.setFont(&fonts::efontJA_16);
+    _canvas.setTextColor(TFT_WHITE, 0x18E3);
+    _canvas.setTextSize(1);
+    _canvas.setCursor(12, 15); _canvas.println(title);
+    _canvas.setCursor(12, 45); _canvas.println(detail);
+    _canvas.fillRoundRect(10, 85, 300, 60, 8, 0x249f);
+    _canvas.setTextColor(TFT_WHITE, 0x249f);
+    _canvas.setCursor(20, 105); _canvas.println(action);
+    _canvas.setTextColor(TFT_WHITE, 0x18E3);
+    _canvas.setCursor(20, 195); _canvas.println("戻る / キャンセル");
     _canvas.pushSprite(0, 0);
 }
 
@@ -111,6 +155,10 @@ void StackChanAvatar::drawEyes() {
     int centerY = 110 + (int)(_gazeY * 8);
 
     uint16_t eyeColor = TFT_WHITE;
+    if (_emotion == EMOTION_SLEEP) eyeColor = 0x7BEF;
+    else if (_emotion == EMOTION_LISTENING) eyeColor = 0x07FF;
+    else if (_emotion == EMOTION_THINKING) eyeColor = 0xFFE0;
+    else if (_emotion == EMOTION_TALKING) eyeColor = 0x07E0;
 
     if (_emotion == EMOTION_HAPPY) {
         _canvas.drawArc(leftCenterX, centerY + 8, 22, 26, 200, 340, eyeColor);
@@ -129,6 +177,9 @@ void StackChanAvatar::drawEyes() {
 
     int eyeRadiusX = 18;
     int eyeRadiusY = (int)(28 * _eyeOpen);
+    if (_emotion == EMOTION_LISTENING) { eyeRadiusX = 22; eyeRadiusY = int(34 * _eyeOpen); }
+    else if (_emotion == EMOTION_THINKING) eyeRadiusY = int(13 * _eyeOpen);
+    else if (_emotion == EMOTION_TALKING) eyeRadiusY = int(23 * _eyeOpen);
     if (_emotion == EMOTION_SURPRISED) {
         eyeRadiusX = 22;
         eyeRadiusY = 32;
@@ -173,6 +224,15 @@ void StackChanAvatar::drawMouth() {
     int cx = 160;
     int cy = 180;
     uint16_t mouthColor = 0xFBEF;
+
+    if (_emotion == EMOTION_LISTENING) {
+        _canvas.fillRoundRect(cx - 7, cy, 14, 3, 1, 0x07FF);
+        return;
+    }
+    if (_emotion == EMOTION_THINKING) {
+        _canvas.drawCircle(cx + 10, cy, 6, 0xFFE0);
+        return;
+    }
 
     if (_mouthOpen > 0.08f) {
         int mw = 22 + (int)(_mouthOpen * 20);

@@ -1,0 +1,2428 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": false,
+  "expected_version": "R13.4",
+  "events": [
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 32918,
+      "frames": 108,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 0.75
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 152709,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 1.015
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 1.015
+    },
+    {
+      "kind": "reference_window_crop",
+      "first": 73,
+      "end": 122,
+      "template_frames": 44,
+      "candidate_frames": 60,
+      "seconds": 1.281
+    },
+    {
+      "kind": "reference_window_quality",
+      "noise": 158,
+      "warm": 168,
+      "gate": 360,
+      "rms": 328,
+      "peak": 1847,
+      "dc": 106,
+      "clips": 0,
+      "seconds": 1.281
+    },
+    {
+      "kind": "reference_window_timing",
+      "compute_ms": 52,
+      "input_gap_ms": 729,
+      "seconds": 1.281
+    },
+    {
+      "kind": "registration_comparison",
+      "current": 744,
+      "previous": 649,
+      "available": 1,
+      "seconds": 1.281
+    },
+    {
+      "kind": "reference_match",
+      "frames": 60,
+      "distance": 744,
+      "matched": 0,
+      "seconds": 1.281
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 1.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 34921,
+      "frames": 101,
+      "voice": 0,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 2.797
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 3.312
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 3.562
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2045,
+      "ready_ms": 36966,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 4.828
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 5.344
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 157749,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 6.109
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 6.109
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2032,
+      "ready_ms": 38998,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 6.875
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 7.375
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 8.64
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 41001,
+      "frames": 101,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 8.89
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 9.14
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2046,
+      "ready_ms": 43047,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 10.937
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 11.187
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 162749,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 11.187
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 11.187
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2031,
+      "ready_ms": 45078,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 12.969
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 13.219
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 13.734
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 47081,
+      "frames": 101,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 15.0
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 15.25
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 16.0
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 167830,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 16.25
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2045,
+      "ready_ms": 49126,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 17.031
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 17.281
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 18.562
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2032,
+      "ready_ms": 51158,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 19.062
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 19.312
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 53161,
+      "frames": 101,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 21.078
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 21.078
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 172832,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 21.078
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 21.328
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2045,
+      "ready_ms": 55206,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 23.109
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 23.359
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 23.609
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2033,
+      "ready_ms": 57239,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 25.14
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 25.14
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 26.156
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 177909,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 26.156
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 59241,
+      "frames": 101,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 27.172
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 27.172
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 28.687
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2045,
+      "ready_ms": 61286,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 29.187
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 29.187
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 31.219
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2033,
+      "ready_ms": 63319,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 31.219
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 31.219
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 182909,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 31.219
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 65321,
+      "frames": 101,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 33.25
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 33.25
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 33.765
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2045,
+      "ready_ms": 67366,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 35.281
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 35.281
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 36.047
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 187989,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 36.297
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 37.328
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2033,
+      "ready_ms": 69399,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 37.328
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 38.578
+    },
+    {
+      "kind": "trial_marker",
+      "trial": 1,
+      "seconds": 38.844
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 39.344
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 71399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 39.344
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 41.156
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 41.156
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 73399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 41.156
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 192989,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 41.406
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 43.219
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 75399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 43.219
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 43.469
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 45.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 77399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 45.281
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 46.062
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 198069,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 46.312
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 47.359
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 79399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 47.359
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 48.656
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 49.156
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 81399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 49.156
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 51.203
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 51.203
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 83399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 51.203
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 203069,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 51.453
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 53.297
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 85399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 53.297
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 53.547
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 55.344
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 87399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 55.344
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 56.109
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 208149,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 56.64
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 57.14
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 89399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 57.14
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 58.719
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 59.234
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 91399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 59.234
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 61.078
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 61.328
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 93399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 61.328
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 213149,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 61.578
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 63.39
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 95399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 63.39
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 63.64
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 65.187
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 97399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 65.187
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 66.187
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 218229,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 66.703
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 67.203
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 99399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 67.203
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 68.765
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 69.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 101399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 69.281
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 71.062
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 71.328
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 103399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 71.328
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 223229,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 71.578
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 73.359
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 105399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 73.359
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 73.625
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 75.156
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 107399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 75.156
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 76.156
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 228309,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 76.672
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 22,
+      "speech": 16,
+      "joint": 8,
+      "seconds": 77.172
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 109399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 77.172
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 78.687
+    },
+    {
+      "kind": "reference_window_crop",
+      "first": 140,
+      "end": 227,
+      "template_frames": 44,
+      "candidate_frames": 107,
+      "seconds": 78.687
+    },
+    {
+      "kind": "reference_window_quality",
+      "noise": 36,
+      "warm": 37,
+      "gate": 100,
+      "rms": 196,
+      "peak": 3246,
+      "dc": 32,
+      "clips": 0,
+      "seconds": 78.687
+    },
+    {
+      "kind": "reference_window_timing",
+      "compute_ms": 95,
+      "input_gap_ms": 104,
+      "seconds": 78.687
+    },
+    {
+      "kind": "registration_comparison",
+      "current": 456,
+      "previous": 443,
+      "available": 1,
+      "seconds": 78.687
+    },
+    {
+      "kind": "reference_match",
+      "frames": 107,
+      "distance": 456,
+      "matched": 0,
+      "seconds": 78.687
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 20,
+      "speech": 5,
+      "joint": 0,
+      "seconds": 79.219
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 111399,
+      "frames": 100,
+      "voice": 0,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 79.219
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 81.234
+    },
+    {
+      "kind": "reference_window_crop",
+      "first": 15,
+      "end": 102,
+      "template_frames": 44,
+      "candidate_frames": 107,
+      "seconds": 81.234
+    },
+    {
+      "kind": "reference_window_quality",
+      "noise": 30,
+      "warm": 32,
+      "gate": 100,
+      "rms": 196,
+      "peak": 3246,
+      "dc": 32,
+      "clips": 0,
+      "seconds": 81.234
+    },
+    {
+      "kind": "reference_window_timing",
+      "compute_ms": 96,
+      "input_gap_ms": 147,
+      "seconds": 81.234
+    },
+    {
+      "kind": "registration_comparison",
+      "current": 456,
+      "previous": 443,
+      "available": 1,
+      "seconds": 81.234
+    },
+    {
+      "kind": "reference_match",
+      "frames": 107,
+      "distance": 456,
+      "matched": 0,
+      "seconds": 81.234
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2035,
+      "ready_ms": 113434,
+      "frames": 94,
+      "voice": 0,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 81.234
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 8,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 81.234
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 233349,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 81.75
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 20,
+      "speech": 7,
+      "joint": 5,
+      "seconds": 83.265
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2013,
+      "ready_ms": 115447,
+      "frames": 107,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 83.265
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 83.515
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 85.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2031,
+      "ready_ms": 117478,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 85.281
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 86.047
+    },
+    {
+      "kind": "reference_window_crop",
+      "first": 3,
+      "end": 43,
+      "template_frames": 44,
+      "candidate_frames": 49,
+      "seconds": 86.047
+    },
+    {
+      "kind": "reference_window_quality",
+      "noise": 99,
+      "warm": 101,
+      "gate": 165,
+      "rms": 189,
+      "peak": 1028,
+      "dc": 20,
+      "clips": 0,
+      "seconds": 86.047
+    },
+    {
+      "kind": "reference_window_timing",
+      "compute_ms": 43,
+      "input_gap_ms": 148,
+      "seconds": 86.047
+    },
+    {
+      "kind": "registration_comparison",
+      "current": 861,
+      "previous": 646,
+      "available": 1,
+      "seconds": 86.047
+    },
+    {
+      "kind": "reference_match",
+      "frames": 49,
+      "distance": 861,
+      "matched": 0,
+      "seconds": 86.047
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 238389,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 86.812
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 87.328
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2047,
+      "ready_ms": 119526,
+      "frames": 101,
+      "voice": 0,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 47,
+      "seconds": 87.328
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 88.594
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 89.375
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2032,
+      "ready_ms": 121558,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 89.375
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 91.156
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 3,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 91.156
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 123561,
+      "frames": 101,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 91.406
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 243389,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 91.656
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 23,
+      "speech": 17,
+      "joint": 13,
+      "seconds": 93.187
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2045,
+      "ready_ms": 125606,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 93.437
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 93.687
+    },
+    {
+      "kind": "reference_window_crop",
+      "first": 182,
+      "end": 221,
+      "template_frames": 44,
+      "candidate_frames": 47,
+      "seconds": 93.687
+    },
+    {
+      "kind": "reference_window_quality",
+      "noise": 22,
+      "warm": 19,
+      "gate": 100,
+      "rms": 211,
+      "peak": 677,
+      "dc": 43,
+      "clips": 0,
+      "seconds": 93.687
+    },
+    {
+      "kind": "reference_window_timing",
+      "compute_ms": 41,
+      "input_gap_ms": 95,
+      "seconds": 93.687
+    },
+    {
+      "kind": "registration_comparison",
+      "current": 167,
+      "previous": 234,
+      "available": 1,
+      "seconds": 93.687
+    },
+    {
+      "kind": "reference_match",
+      "frames": 47,
+      "distance": 167,
+      "matched": 1,
+      "seconds": 93.687
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 245434,
+      "heap": 230560,
+      "stack": 5120,
+      "seconds": 93.687
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 245548,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 93.953
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 2,
+      "speech": 2,
+      "joint": 0,
+      "seconds": 95.703
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 5,
+      "ms": 248394,
+      "heap": 231584,
+      "stack": 5120,
+      "seconds": 96.719
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 65,
+      "speech": 53,
+      "joint": 38,
+      "seconds": 97.484
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 6,
+      "ms": 250726,
+      "heap": 221460,
+      "stack": 5120,
+      "seconds": 99.0
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 253415,
+      "heap": 176840,
+      "stack": 5120,
+      "seconds": 101.797
+    },
+    {
+      "kind": "api_result",
+      "stage": 1,
+      "status": 200,
+      "elapsed_ms": 6765,
+      "seconds": 106.094
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 258443,
+      "heap": 128708,
+      "stack": 5120,
+      "seconds": 106.859
+    },
+    {
+      "kind": "api_result",
+      "stage": 2,
+      "status": 200,
+      "elapsed_ms": 3262,
+      "seconds": 109.375
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 263450,
+      "heap": 176784,
+      "stack": 5120,
+      "seconds": 111.922
+    },
+    {
+      "kind": "api_result",
+      "stage": 3,
+      "status": 200,
+      "elapsed_ms": 4500,
+      "seconds": 113.687
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 268472,
+      "heap": 221144,
+      "stack": 5120,
+      "seconds": 116.719
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 7,
+      "ms": 268928,
+      "heap": 230284,
+      "stack": 5120,
+      "seconds": 117.219
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 7,
+      "ms": 273495,
+      "heap": 230284,
+      "stack": 5120,
+      "seconds": 121.765
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 274217,
+      "heap": 231308,
+      "stack": 5120,
+      "seconds": 122.515
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 14,
+      "speech": 13,
+      "joint": 6,
+      "seconds": 123.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2001,
+      "ready_ms": 2086,
+      "frames": 45,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 124.531
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 125.297
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 4086,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 126.562
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 278537,
+      "heap": 231308,
+      "stack": 5120,
+      "seconds": 126.812
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 127.328
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 6086,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 45,
+      "seconds": 128.578
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 129.344
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 129.594
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 8086,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 45,
+      "seconds": 130.609
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 131.375
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 283539,
+      "heap": 231308,
+      "stack": 5120,
+      "seconds": 131.875
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 132.125
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 10086,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 132.625
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 21,
+      "speech": 16,
+      "joint": 12,
+      "seconds": 133.14
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 12086,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 45,
+      "seconds": 134.64
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 134.64
+    },
+    {
+      "kind": "reference_window_crop",
+      "first": 136,
+      "end": 172,
+      "template_frames": 44,
+      "candidate_frames": 44,
+      "seconds": 134.64
+    },
+    {
+      "kind": "reference_window_quality",
+      "noise": 15,
+      "warm": 15,
+      "gate": 100,
+      "rms": 224,
+      "peak": 702,
+      "dc": 39,
+      "clips": 0,
+      "seconds": 134.64
+    },
+    {
+      "kind": "reference_window_timing",
+      "compute_ms": 39,
+      "input_gap_ms": 73,
+      "seconds": 134.64
+    },
+    {
+      "kind": "registration_comparison",
+      "current": 234,
+      "previous": 247,
+      "available": 1,
+      "seconds": 134.64
+    },
+    {
+      "kind": "reference_match",
+      "frames": 44,
+      "distance": 234,
+      "matched": 1,
+      "seconds": 134.64
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 286462,
+      "heap": 230284,
+      "stack": 5120,
+      "seconds": 134.89
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 286576,
+      "heap": 231308,
+      "stack": 5120,
+      "seconds": 134.89
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 2,
+      "speech": 2,
+      "joint": 0,
+      "seconds": 135.656
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 5,
+      "ms": 288622,
+      "heap": 231308,
+      "stack": 5120,
+      "seconds": 136.922
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 9,
+      "speech": 10,
+      "joint": 7,
+      "seconds": 137.687
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 56,
+      "speech": 44,
+      "joint": 37,
+      "seconds": 139.469
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 6,
+      "ms": 291594,
+      "heap": 221188,
+      "stack": 5120,
+      "seconds": 139.969
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 293622,
+      "heap": 130428,
+      "stack": 5120,
+      "seconds": 142.015
+    },
+    {
+      "kind": "api_result",
+      "stage": 1,
+      "status": 200,
+      "elapsed_ms": 5223,
+      "seconds": 145.312
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 298659,
+      "heap": 130412,
+      "stack": 5120,
+      "seconds": 147.094
+    },
+    {
+      "kind": "api_result",
+      "stage": 2,
+      "status": 200,
+      "elapsed_ms": 2962,
+      "seconds": 148.344
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 6,
+      "ms": 303661,
+      "heap": 176568,
+      "stack": 5120,
+      "seconds": 152.14
+    },
+    {
+      "kind": "api_result",
+      "stage": 3,
+      "status": 200,
+      "elapsed_ms": 3883,
+      "seconds": 152.14
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 7,
+      "ms": 306219,
+      "heap": 230132,
+      "stack": 5120,
+      "seconds": 154.687
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 7,
+      "ms": 308678,
+      "heap": 230132,
+      "stack": 5120,
+      "seconds": 156.969
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 309807,
+      "heap": 231156,
+      "stack": 5120,
+      "seconds": 158.234
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 2,
+      "joint": 0,
+      "seconds": 160.0
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2001,
+      "ready_ms": 2086,
+      "frames": 45,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 160.0
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 162.015
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 313682,
+      "heap": 231156,
+      "stack": 5120,
+      "seconds": 162.015
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2047,
+      "ready_ms": 4134,
+      "frames": 101,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 162.281
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 164.047
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2033,
+      "ready_ms": 6167,
+      "frames": 103,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 164.297
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 165.312
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 41,
+      "speech": 13,
+      "joint": 6,
+      "seconds": 166.062
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2002,
+      "ready_ms": 8169,
+      "frames": 101,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 1,
+      "draw_max_ms": 46,
+      "seconds": 166.312
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 318767,
+      "heap": 231156,
+      "stack": 5120,
+      "seconds": 167.078
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 167.594
+    },
+    {
+      "kind": "reference_window_crop",
+      "first": 112,
+      "end": 190,
+      "template_frames": 44,
+      "candidate_frames": 96,
+      "seconds": 167.844
+    },
+    {
+      "kind": "reference_window_quality",
+      "noise": 21,
+      "warm": 21,
+      "gate": 100,
+      "rms": 365,
+      "peak": 3411,
+      "dc": 461,
+      "clips": 0,
+      "seconds": 167.844
+    },
+    {
+      "kind": "reference_window_timing",
+      "compute_ms": 85,
+      "input_gap_ms": 73,
+      "seconds": 167.844
+    },
+    {
+      "kind": "registration_comparison",
+      "current": 368,
+      "previous": 330,
+      "available": 1,
+      "seconds": 167.844
+    },
+    {
+      "kind": "reference_match",
+      "frames": 96,
+      "distance": 368,
+      "matched": 0,
+      "seconds": 167.844
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 25,
+      "speech": 13,
+      "joint": 9,
+      "seconds": 168.094
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 10169,
+      "frames": 100,
+      "voice": 0,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 168.094
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 169.89
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 44,
+      "ram": 1,
+      "seconds": 170.14
+    },
+    {
+      "kind": "reference_window_crop",
+      "first": 6,
+      "end": 59,
+      "template_frames": 44,
+      "candidate_frames": 65,
+      "seconds": 170.39
+    },
+    {
+      "kind": "reference_window_quality",
+      "noise": 235,
+      "warm": 251,
+      "gate": 424,
+      "rms": 471,
+      "peak": 3411,
+      "dc": 461,
+      "clips": 0,
+      "seconds": 170.39
+    },
+    {
+      "kind": "reference_window_timing",
+      "compute_ms": 57,
+      "input_gap_ms": 137,
+      "seconds": 170.39
+    },
+    {
+      "kind": "registration_comparison",
+      "current": 429,
+      "previous": 375,
+      "available": 1,
+      "seconds": 170.39
+    },
+    {
+      "kind": "reference_match",
+      "frames": 65,
+      "distance": 429,
+      "matched": 0,
+      "seconds": 170.39
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2106,
+      "ready_ms": 12275,
+      "frames": 100,
+      "voice": 0,
+      "complete": 1,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 170.39
+    }
+  ],
+  "started_at_jst": "2026-10-28T15:06:01.981+09:00",
+  "stopped_by_marker": true,
+  "elapsed_seconds": 170.89,
+  "ended_at_jst": "2026-10-28T15:08:52.879+09:00"
+}

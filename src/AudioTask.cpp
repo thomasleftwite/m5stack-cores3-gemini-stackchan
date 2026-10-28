@@ -3,12 +3,18 @@
 #include <math.h>
 #include <algorithm>
 #include "QueuedMicFrames.h"
+#include "VoiceActivity.h"
+#include "MicrophoneLevel.h"
+#include "SpeechDetector.h"
 namespace {
 int16_t* recording = nullptr;
 size_t used = 0;
-bool capturing = false, mic = false, playing = false, voiced = false;
+bool capturing = false, mic = false, playing = false, voiced = false, aboveBackground = false;
 uint8_t volume = 160;
-float rms = 0, noise = 60;
+float rms = 0;
+VoiceActivity voiceActivity;
+SpeechDetector speechDetector;
+unsigned diagnosticFrames = 0, diagnosticEnergy = 0, diagnosticSpeech = 0, diagnosticJoint = 0;
 const int16_t* playback = nullptr;
 size_t playbackCount = 0, position = 0;
 int16_t speakerBuffers[4][960];
@@ -20,13 +26,18 @@ bool AudioTask::init(uint8_t gain, uint8_t level) {
     recording = (int16_t*)heap_caps_calloc(conversation::InputSamples, 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     M5.Speaker.end(); M5.Mic.end();
     auto config = M5.Mic.config(); config.sample_rate = 16000;
-    config.magnification = uint8_t(constrain(int(gain) / 5, 1, 32)); M5.Mic.config(config);
-    return recording && setMicEnabled(true);
+    config.magnification = microphoneMagnification(gain, config.magnification); M5.Mic.config(config);
+    return recording && speechDetector.begin() && setMicEnabled(true);
 }
 bool AudioTask::setMicEnabled(bool enabled) {
     if (enabled == mic) return true;
-    if (enabled) { if (playing) return false; M5.Speaker.end(); mic = M5.Mic.begin(); }
-    else { M5.Mic.end(); micFrames.reset(); mic = false; voiced = false; rms = 0; }
+    if (enabled) {
+        if (playing) return false;
+        M5.Speaker.end(); mic = M5.Mic.begin();
+        // Reserve input destinations before a status/face draw can block.
+        if (mic && !micFrames.prime(M5.Mic)) { M5.Mic.end(); micFrames.reset(); mic=false; }
+    }
+    else { M5.Mic.end(); micFrames.reset(); mic = false; voiced = aboveBackground = false; rms = 0; }
     return enabled == mic;
 }
 bool AudioTask::readFrame(int16_t* frame) {
@@ -35,8 +46,16 @@ bool AudioTask::readFrame(int16_t* frame) {
     int64_t mean = 0; for (int i = 0; i < 320; ++i) mean += frame[i]; mean /= 320;
     double energy = 0; for (int i = 0; i < 320; ++i) { double v = frame[i] - mean; energy += v*v; }
     float raw = sqrt(energy / 320); rms = raw / 8000;
-    voiced = raw > fmaxf(100, noise * 2.5f);
-    if (!voiced) noise = fminf(500, fmaxf(25, noise * .98f + raw * .02f));
+    const bool aboveNoise = voiceActivity.update(raw);
+    aboveBackground = aboveNoise;
+    int speech = speechDetector.update(frame, aboveNoise);
+    if (speech < 0) { setMicEnabled(false); return false; }
+    voiced = speechDetector.accepted();
+    ++diagnosticFrames; diagnosticEnergy += aboveNoise; diagnosticSpeech += speech == 1; diagnosticJoint += voiced;
+    if (diagnosticFrames >= 100) {
+        if (Serial.availableForWrite() >= 128) Serial.printf("[DEBUG-r13v1] frames=%u energy=%u speech=%u joint=%u\n", diagnosticFrames, diagnosticEnergy, diagnosticSpeech, diagnosticJoint);
+        diagnosticFrames = diagnosticEnergy = diagnosticSpeech = diagnosticJoint = 0;
+    }
     if (capturing && recording) {
         size_t count = std::min(size_t(320), conversation::InputSamples - used);
         memcpy(recording + used, frame, count * 2); used += count;
@@ -44,6 +63,11 @@ bool AudioTask::readFrame(int16_t* frame) {
     return true;
 }
 bool AudioTask::isVoiceDetected() { return voiced; }
+bool AudioTask::isAboveBackground() { return aboveBackground; }
+void AudioTask::beginListeningCalibration() {
+    voiceActivity.beginCalibration(); speechDetector.reset(); voiced = aboveBackground = false;
+}
+uint32_t AudioTask::listeningEpoch() { return voiceActivity.epoch(); }
 float AudioTask::getLiveRMS() { return rms; }
 void AudioTask::startRecording() { clearRecording(); capturing = true; }
 void AudioTask::stopRecording() { capturing = false; }

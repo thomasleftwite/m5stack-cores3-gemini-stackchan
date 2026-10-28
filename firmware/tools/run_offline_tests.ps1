@@ -30,6 +30,13 @@ $buildCommand = '"{0}" >nul && cl /nologo /std:c++17 /utf-8 /EHsc /W4 /I"{1}" /F
 if ($LASTEXITCODE -ne 0) { throw 'Storage tests did not compile' }
 & $storageExe
 if ($LASTEXITCODE -ne 0) { throw 'Storage tests failed' }
+$windowSource = Join-Path $projectDir 'tests/enrollment_window.cpp'
+$windowExe = Join-Path $outDir 'enrollment_window.exe'
+$buildCommand = '"{0}" >nul && cl /nologo /std:c++17 /utf-8 /EHsc /W4 /I"{1}" /Fe:"{2}" /Fo:"{3}\\" "{4}" "{5}"' -f $vcvars,$stubs,$windowExe,$outDir,$windowSource,$wakeSource
+& cmd.exe /d /s /c $buildCommand
+if ($LASTEXITCODE -ne 0) { throw 'Enrollment window tests did not compile' }
+& $windowExe
+if ($LASTEXITCODE -ne 0) { throw 'Enrollment window tests failed' }
 $retrySource = Join-Path $projectDir 'tests/reply_retry.cpp'
 $retryExe = Join-Path $outDir 'reply_retry.exe'
 $retryObj = Join-Path $outDir 'reply_retry.obj'
@@ -38,3 +45,7 @@ $buildCommand = '"{0}" >nul && cl /nologo /std:c++17 /utf-8 /EHsc /W4 /Fe:"{1}" 
 if ($LASTEXITCODE -ne 0) { throw 'Reply retry tests did not compile' }
 & $retryExe
 if ($LASTEXITCODE -ne 0) { throw 'Reply retry tests failed' }
+python -B (Join-Path $PSScriptRoot 'test_display.py')
+if ($LASTEXITCODE -ne 0) { throw 'Display tests failed' }
+& (Join-Path $PSScriptRoot 'run_regression_tests.ps1')
+& (Join-Path $PSScriptRoot 'run_reference_tests.ps1')

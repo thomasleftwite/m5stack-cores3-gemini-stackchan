@@ -1,28 +1,58 @@
 #include "../src/ConversationRules.h"
 #include "../src/LocalWakeCore.h"
 #include "../src/QueuedMicFrames.h"
+#include "../src/RequestFailure.h"
 #include <assert.h>
 #include <vector>
 #include <stdio.h>
 #include <limits>
 #include <deque>
 struct DelayedMic {
-    std::deque<int16_t*> pending;
+    struct Request { int16_t* data; size_t count; };
+    std::deque<Request> pending;
     int16_t completed = 0;
     bool reject = false;
     // Simulates notification before recording starts: no buffer is filled until
     // the third enqueue blocks for a free slot. The old isRecording loop misses it.
     bool record(int16_t* destination, size_t count, uint32_t rate) {
-        assert(count == 320 && rate == 16000);
+        assert(count % 320 == 0 && rate == 16000);
         if (reject) return false;
         if (pending.size() == 2) {
-            ++completed; auto out = pending.front(); pending.pop_front();
-            for (int i = 0; i < 320; ++i) out[i] = completed;
+            auto out = pending.front(); pending.pop_front();
+            for (size_t base=0;base<out.count;base+=320) {
+                ++completed;
+                for (int i = 0; i < 320; ++i) out.data[base+i] = completed;
+            }
         }
-        pending.push_back(destination); return true;
+        pending.push_back({destination,count}); return true;
+    }
+};
+// Conservative queue model: samples arriving with no destination are lost.
+// Not an emulation of the hardware DMA FIFO; isolates destination starvation.
+struct TimedMic {
+    struct Request { int16_t* data; size_t count, used; };
+    std::deque<Request> pending;
+    unsigned time=0, lost=0;
+    void advance(unsigned samples) {
+        for(unsigned n=0;n<samples;++n,++time) {
+            if(pending.empty()) { ++lost; continue; }
+            auto& p=pending.front(); p.data[p.used++]=int16_t(time%30000);
+            if(p.used==p.count) pending.pop_front();
+        }
+    }
+    bool record(int16_t* p,size_t count,uint32_t rate) {
+        assert(rate==16000);
+        while(pending.size()==2) advance(1);
+        pending.push_back({p,count,0}); return true;
     }
 };
 int main() {
+    assert(requestfailure::classify(nullptr) == requestfailure::None);
+    assert(requestfailure::classify("") == requestfailure::None);
+    assert(requestfailure::classify("Clock not synchronized") == requestfailure::Clock);
+    assert(requestfailure::classify("WiFi disconnected") == requestfailure::WiFi);
+    assert(requestfailure::classify("Request memory unavailable") == requestfailure::RequestMemory);
+    assert(requestfailure::classify("unknown private content") == requestfailure::Unknown);
     QueuedMicFrames micFrames; DelayedMic microphone; int16_t completeFrame[320];
     for (int n = 1; n <= 12; ++n) {
         assert(micFrames.read(microphone, completeFrame));
@@ -30,7 +60,23 @@ int main() {
     }
     microphone.pending.clear(); micFrames.reset();
     assert(micFrames.read(microphone, completeFrame) && completeFrame[0] == 13);
-    microphone.reject = true; assert(!micFrames.read(microphone, completeFrame));
+    microphone.reject = true;
+    bool rejected=false;
+    for(unsigned n=0;n<4;++n) if(!micFrames.read(microphone,completeFrame)) { rejected=true; break; }
+    assert(rejected);
+    QueuedMicFrames buffered; TimedMic timed;
+    assert(buffered.prime(timed));
+    assert(timed.time==0 && timed.pending.size()==2);
+    timed.advance(46*16); // First status redraw after enabling the microphone.
+    unsigned expected=0, nextDraw=0;
+    for(unsigned n=0;n<250;++n) {
+        assert(buffered.read(timed,completeFrame));
+        for(auto sample:completeFrame) assert(sample==int16_t(expected++%30000));
+        if(timed.time>=nextDraw) { timed.advance(46*16); nextDraw=timed.time+54*16; }
+        timed.advance(16); // UI loop's 1 ms yield.
+    }
+    assert(timed.lost==0);
+    puts("PASS: 5 seconds of ordered PCM survives 46 ms drawing with 100 ms frame scheduling (queue model)");
     using namespace conversation;
     auto retryAt = retryDeadline(100, 60000);
     assert(!deadlineReached(60100, retryAt)); // 429 retry window still retains STT/reply.
@@ -85,7 +131,9 @@ int main() {
     segment.reset(); segment.push(tone, true);
     for (int i = 0; i < 19; ++i) segment.push(silence, false);
     assert(segment.push(silence, false) == localwake::Segmenter::Rejected);
+    assert(segment.rejection() == localwake::Segmenter::TooShort);
     segment.reset(); for (int i = 0; i < 149; ++i) segment.push(tone, true);
     assert(segment.push(tone, true) == localwake::Segmenter::Rejected);
+    assert(segment.rejection() == localwake::Segmenter::TooLong);
     puts("PASS: capture deadlines, timer wrap, WAV format/length/chunks, CRC, DTW, local segmentation");
 }

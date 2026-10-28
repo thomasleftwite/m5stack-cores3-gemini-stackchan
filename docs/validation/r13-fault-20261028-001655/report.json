@@ -1,0 +1,507 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": true,
+  "expected_version": "R13.4",
+  "events": [
+    {
+      "kind": "reset",
+      "value": "0x15",
+      "seconds": 0.422
+    },
+    {
+      "kind": "application_start",
+      "seconds": 1.984
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI04",
+      "seconds": 1.984
+    },
+    {
+      "kind": "diagnostic_revision",
+      "value": "S06",
+      "seconds": 1.984
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 1,
+      "state": 0,
+      "ms": 1768,
+      "heap": 288056,
+      "stack": 5252,
+      "seconds": 1.984
+    },
+    {
+      "kind": "reference_paired_probe",
+      "profile": 0,
+      "self": 0,
+      "level": 0,
+      "other": 1039,
+      "raw": 3989006809,
+      "raw_other": 714097188,
+      "feature": 2898136925,
+      "feature_other": 1639861888,
+      "align": 0,
+      "seconds": 11.297
+    },
+    {
+      "kind": "reference_paired_probe",
+      "profile": 1,
+      "self": 0,
+      "level": 0,
+      "other": 392,
+      "raw": 3143839806,
+      "raw_other": 1265197293,
+      "feature": 193076888,
+      "feature_other": 2745896610,
+      "align": 0,
+      "seconds": 11.562
+    },
+    {
+      "kind": "reference_paired_probe",
+      "profile": 2,
+      "self": 0,
+      "level": 0,
+      "other": 392,
+      "raw": 3143839806,
+      "raw_other": 1265197293,
+      "feature": 193076888,
+      "feature_other": 2745896610,
+      "align": 0,
+      "seconds": 11.562
+    },
+    {
+      "kind": "reference_paired_probe",
+      "profile": 3,
+      "self": 0,
+      "level": 0,
+      "other": 392,
+      "raw": 3143839806,
+      "raw_other": 1265197293,
+      "feature": 193076888,
+      "feature_other": 2745896610,
+      "align": 0,
+      "seconds": 11.828
+    },
+    {
+      "kind": "registration_slot",
+      "slot": 0,
+      "valid": 1,
+      "generation": 1,
+      "frames": 42,
+      "seconds": 11.828
+    },
+    {
+      "kind": "registration_slot",
+      "slot": 1,
+      "valid": 1,
+      "generation": 2,
+      "frames": 55,
+      "seconds": 11.828
+    },
+    {
+      "kind": "registration_audit",
+      "slot": 1,
+      "generation": 2,
+      "frames": 55,
+      "ram": 1,
+      "disk": 1,
+      "same": 1,
+      "seconds": 11.828
+    },
+    {
+      "kind": "reference_init",
+      "initialized": true,
+      "stored": 1,
+      "seconds": 11.828
+    },
+    {
+      "kind": "ready",
+      "seconds": 11.828
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 11706,
+      "heap": 232636,
+      "stack": 5136,
+      "seconds": 11.828
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 11706,
+      "heap": 232636,
+      "stack": 5136,
+      "seconds": 11.828
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 16,
+      "speech": 1,
+      "joint": 0,
+      "seconds": 13.64
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2019,
+      "ready_ms": 2020,
+      "frames": 41,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 13.906
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 33,
+      "speech": 3,
+      "joint": 0,
+      "seconds": 15.734
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 4020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 15.984
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 16811,
+      "heap": 232636,
+      "stack": 5136,
+      "seconds": 17.031
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 8,
+      "speech": 3,
+      "joint": 0,
+      "seconds": 17.562
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 6020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 17.828
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 55,
+      "ram": 1,
+      "seconds": 19.125
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 23,
+      "speech": 9,
+      "joint": 3,
+      "seconds": 19.64
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 8020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 19.89
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 55,
+      "ram": 1,
+      "seconds": 21.703
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 20,
+      "speech": 6,
+      "joint": 1,
+      "seconds": 21.703
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 10020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 21.969
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 21811,
+      "heap": 232636,
+      "stack": 5136,
+      "seconds": 21.969
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 0,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 23.765
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 12020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 24.031
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 55,
+      "ram": 1,
+      "seconds": 24.031
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 7,
+      "speech": 1,
+      "joint": 0,
+      "seconds": 25.562
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 14020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 25.828
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 55,
+      "ram": 1,
+      "seconds": 26.609
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 26892,
+      "heap": 232636,
+      "stack": 5136,
+      "seconds": 27.14
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 26,
+      "speech": 8,
+      "joint": 2,
+      "seconds": 27.656
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 16020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 27.906
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 55,
+      "ram": 1,
+      "seconds": 28.937
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 33,
+      "speech": 4,
+      "joint": 0,
+      "seconds": 29.719
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 18020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 29.984
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 55,
+      "ram": 1,
+      "seconds": 31.515
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 15,
+      "speech": 14,
+      "joint": 7,
+      "seconds": 31.781
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 20020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 31.781
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 31894,
+      "heap": 232636,
+      "stack": 5136,
+      "seconds": 32.031
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 2,
+      "speech": 7,
+      "joint": 0,
+      "seconds": 33.609
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 22020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 33.859
+    },
+    {
+      "kind": "registration_runtime",
+      "frames": 55,
+      "ram": 1,
+      "seconds": 34.125
+    }
+  ],
+  "storage_mounted": true,
+  "config_loaded": true,
+  "key_configured": true,
+  "wifi_connected": true,
+  "wifi_portal": false,
+  "ready": true,
+  "fault": false,
+  "boot_count": 1,
+  "unexpected_reset": false,
+  "pre_reset_events": [
+    {
+      "kind": "application_start"
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI04"
+    },
+    {
+      "kind": "diagnostic_revision",
+      "value": "S06"
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 1,
+      "state": 0,
+      "ms": 1772,
+      "heap": 288056,
+      "stack": 5252
+    }
+  ],
+  "version": "R13.4",
+  "wake_registered": true,
+  "elapsed_seconds": 35.172,
+  "boot_pass": true
+}

@@ -1,4 +1,4 @@
-R13（2026-10-25）の再開は docs/VOICE_PIPELINE_R13.md と docs/R13_VALIDATION.md を参照。以下R12以前は旧記録。
+R13.4/S08（2026-10-28）の再開は docs/DEVELOPMENT_SUMMARY_2026-10-28.md、docs/VOICE_PIPELINE_R13.md、docs/R13_VALIDATION.md を参照。二段階登録と再起動後を含む計3回の通常会話が成功。TV/非対象語・長時間・電源断は未検証。開発モデルはGPT-6.1 Sol Highを上限としAstraを使用しない。以下R12以前は旧記録。
 
 # デバッグ引継ぎ & プロジェクト要約（2026-10-09 / R09）
 

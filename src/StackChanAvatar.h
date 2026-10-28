@@ -9,27 +9,35 @@ enum AvatarEmotion {
     EMOTION_SURPRISED,
     EMOTION_THINKING,
     EMOTION_TALKING,
-    EMOTION_SLEEP
+    EMOTION_SLEEP,
+    EMOTION_LISTENING
 };
+
+enum class AvatarMode { Sleep, Ready, Listening, Thinking, Speaking };
 
 class StackChanAvatar {
 public:
     StackChanAvatar();
     void init(M5GFX* display);
     void update();
+    void setMode(AvatarMode mode);
     void setEmotion(AvatarEmotion emotion);
     void setLipSyncLevel(float level); // 0.0 ~ 1.0 (口の開き具合)
     void triggerBlink();
     void setGaze(float x, float y);   // -1.0 ~ 1.0 (視線)
     void setStatus(const String& text) { _status = text; }
+    void drawMenu(const String& title, const String& action, const String& detail);
 
 private:
     M5GFX* _gfx = nullptr;
     String _status;
+    bool _menuVisible = false;
+    String _menuTitle, _menuAction, _menuDetail;
     M5Canvas _canvas; // PSRAM上のダブルバッファスプライト (320x240)
 
     AvatarEmotion _emotion = EMOTION_NORMAL;
     AvatarEmotion _targetEmotion = EMOTION_NORMAL;
+    AvatarMode _mode = AvatarMode::Ready;
 
     // アニメーション用補間変数
     float _eyeOpen = 1.0f;

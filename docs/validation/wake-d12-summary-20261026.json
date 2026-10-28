@@ -1,0 +1,29 @@
+{
+  "report": "r13-fault-20261026-161346/report.json",
+  "registration_saved": true,
+  "sequence_pairs": 3,
+  "positive_calls_reported": 2,
+  "positive_window": [
+    95.797,
+    222.844
+  ],
+  "positive_decisions": [
+    169.172,
+    173.281,
+    185.422,
+    205.125,
+    212.953
+  ],
+  "positive_extra_decisions_at_least": 3,
+  "positive_accuracy": "unresolved; do not claim 2/2",
+  "transition_false_decision": 229.312,
+  "transition_user_called": false,
+  "tv_window": [
+    265.828,
+    385.828
+  ],
+  "tv_matches": 0,
+  "tv_sleep_transitions": 0,
+  "boot_pass": true,
+  "result": "failed acceptance due to false decisions; D13 required"
+}
