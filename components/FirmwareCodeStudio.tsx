@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { FIRMWARE_FILES, FirmwareFile } from "@/lib/firmware-sources";
+import { REPLY_MODEL } from "@/lib/gemini-models";
 import {
   Code,
   Download,
@@ -46,24 +47,16 @@ export const FirmwareCodeStudio: React.FC<FirmwareCodeStudioProps> = ({
   const [isZipping, setIsZipping] = useState(false);
 
   // Generate dynamic config.json content reflecting current props
-  const currentConfigContent = `{
-  "gemini_api_key": "${apiKeyParam || "AIzaSyYOUR_GEMINI_API_KEY"}",
-  "gemini_model": "gemini-3.8-flash",
-  "tts_voice": "${ttsVoiceParam}",
-  "wake_word": "${wakeWordParam}",
-  "silence_timeout_sec": ${silenceSecParam},
-  "camera_motion_threshold": ${motionThreshParam},
-  "spk_volume": 160,
-  "mic_gain": 80,
-  "servo_enabled": ${servoEnabledParam},
-  "servo_pan_pin": ${servoPanPinParam},
-  "servo_tilt_pin": ${servoTiltPinParam},
-  "servo_pan_center": ${servoPanCenterParam},
-  "servo_tilt_center": ${servoTiltCenterParam}
-}`;
+  // Shared downloads always contain a key-free example. Add credentials locally.
+  const currentConfigContent = JSON.stringify({
+    gemini_api_key: "", gemini_model: REPLY_MODEL, tts_voice: ttsVoiceParam,
+    spk_volume: 160, mic_gain: 80, servo_enabled: servoEnabledParam,
+    servo_pan_pin: servoPanPinParam, servo_tilt_pin: servoTiltPinParam,
+    servo_pan_center: servoPanCenterParam, servo_tilt_center: servoTiltCenterParam,
+  }, null, 2);
 
   const files = FIRMWARE_FILES.map((f) => {
-    if (f.name === "config.json") {
+    if (f.path === "data/config.example.json") {
       return { ...f, content: currentConfigContent };
     }
     return f;
@@ -184,11 +177,10 @@ export const FirmwareCodeStudio: React.FC<FirmwareCodeStudioProps> = ({
               ビルドコマンド (PlatformIO CLI)
             </span>
             <div className="bg-black p-2 rounded font-mono text-[10px] text-emerald-400 select-all">
-              pio run -t uploadfs<br />
-              pio run -t upload
+              pio run -e m5stack-cores3
             </div>
             <p className="text-[10px] text-neutral-400">
-              ※<code>uploadfs</code> はGemini等の設定転送用です。WiFiは本体の「StackChan-Setup」から設定します。
+              R13はAPI・実機未検証です。設定例のAPIキーは空欄です。既存機へのuploadfsは設定と呼びかけ登録を置換するため実行しないでください。
             </p>
           </div>
         </div>

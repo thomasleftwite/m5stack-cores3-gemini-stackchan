@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { ai } from "@/lib/gemini";
+import { REPLY_MODEL } from "@/lib/gemini-models";
 
 const SYSTEM_INSTRUCTION = `You are Stack-chan (スタックチャン), an adorable desktop companion robot living on an M5Stack CoreS3 Lite device.
 You speak in warm, cheerful, cute Japanese. Keep your answers brief (1 to 2 short sentences, 30-70 characters) because you speak via voice synthesis on a small embedded speaker.
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     });
 
     const responseStream = await ai.models.generateContentStream({
-      model: "gemini-3.8-flash",
+      model: REPLY_MODEL,
       contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,

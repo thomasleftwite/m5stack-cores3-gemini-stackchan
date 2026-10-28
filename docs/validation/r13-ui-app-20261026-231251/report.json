@@ -1,0 +1,21 @@
+{
+  "scope": "UI app0 only; bootloader, table, boot selection, NVS and FAT preserved",
+  "ui_revision": "UI04",
+  "diagnostic": "S02",
+  "port": "COM10",
+  "firmware_sha256": "3b973dc846d4359dfb0dbdcccb35a88a799bc936098ab1a787016f249c83725b",
+  "firmware_bytes": 2353616,
+  "write_offset": "0x10000",
+  "written": true,
+  "hash_verified": true,
+  "device_layout_match": true,
+  "app0_boot_selection_confirmed": true,
+  "post_layout_match": true,
+  "app_bytes_verified": true,
+  "preserved": {
+    "bootloader": true,
+    "nvs": true,
+    "boot_selection": true,
+    "fat": true
+  }
+}

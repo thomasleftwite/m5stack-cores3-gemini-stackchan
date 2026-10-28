@@ -1,0 +1,22 @@
+{
+  "client_date": "2026-10-25",
+  "variant": "more_output",
+  "model": "gemini-3.8-flash",
+  "request_bytes": 142,
+  "http_status": 503,
+  "ok": false,
+  "proxy_configured": false,
+  "api_status": "UNAVAILABLE",
+  "message_classification": {
+    "overload": true,
+    "temporary": true,
+    "quota": false,
+    "account": false,
+    "unsupported": false,
+    "region": false
+  },
+  "reason_codes": [],
+  "retry_after_seconds": null,
+  "server_google_frontend": false,
+  "elapsed_seconds": 3.904
+}

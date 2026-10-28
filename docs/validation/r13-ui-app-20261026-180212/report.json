@@ -1,0 +1,12 @@
+{
+  "scope": "UI app0 only; bootloader, table, boot selection, NVS and FAT preserved",
+  "ui_revision": "UI04",
+  "diagnostic": "E01",
+  "port": "COM10",
+  "firmware_sha256": "20e4caec9cd94da99ceab40fa1fcaa208fad5c23478d1bcaaf5e27006c87e887",
+  "firmware_bytes": 2138512,
+  "write_offset": "0x10000",
+  "written": false,
+  "hash_verified": false,
+  "error_kind": "FatalError"
+}

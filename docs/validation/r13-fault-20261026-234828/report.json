@@ -1,0 +1,285 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": true,
+  "expected_version": "R13.4",
+  "events": [
+    {
+      "kind": "reset",
+      "value": "0x15",
+      "seconds": 0.406
+    },
+    {
+      "kind": "application_start",
+      "seconds": 1.969
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI04",
+      "seconds": 1.969
+    },
+    {
+      "kind": "diagnostic_revision",
+      "value": "S03",
+      "seconds": 1.969
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 1,
+      "state": 0,
+      "ms": 1766,
+      "heap": 288120,
+      "stack": 5252,
+      "seconds": 1.969
+    },
+    {
+      "kind": "reference_paired_probe",
+      "profile": 0,
+      "self": 0,
+      "level": 0,
+      "other": 1039,
+      "raw": 3989006809,
+      "raw_other": 714097188,
+      "feature": 2898136925,
+      "feature_other": 1639861888,
+      "align": 8,
+      "seconds": 11.812
+    },
+    {
+      "kind": "reference_paired_probe",
+      "profile": 1,
+      "self": 0,
+      "level": 0,
+      "other": 392,
+      "raw": 3143839806,
+      "raw_other": 1265197293,
+      "feature": 193076888,
+      "feature_other": 2745896610,
+      "align": 8,
+      "seconds": 12.078
+    },
+    {
+      "kind": "reference_paired_probe",
+      "profile": 2,
+      "self": 0,
+      "level": 0,
+      "other": 392,
+      "raw": 3143839806,
+      "raw_other": 1265197293,
+      "feature": 193076888,
+      "feature_other": 2745896610,
+      "align": 8,
+      "seconds": 12.078
+    },
+    {
+      "kind": "reference_paired_probe",
+      "profile": 3,
+      "self": 0,
+      "level": 0,
+      "other": 392,
+      "raw": 3143839806,
+      "raw_other": 1265197293,
+      "feature": 193076888,
+      "feature_other": 2745896610,
+      "align": 8,
+      "seconds": 12.344
+    },
+    {
+      "kind": "reference_init",
+      "initialized": true,
+      "stored": 1,
+      "seconds": 12.344
+    },
+    {
+      "kind": "ready",
+      "seconds": 12.344
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 12194,
+      "heap": 232724,
+      "stack": 5136,
+      "seconds": 12.344
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 12195,
+      "heap": 232724,
+      "stack": 5136,
+      "seconds": 12.344
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 10,
+      "speech": 1,
+      "joint": 0,
+      "seconds": 14.141
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2020,
+      "ready_ms": 2020,
+      "frames": 41,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 14.406
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 29,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 16.219
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 4020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 16.484
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 17301,
+      "heap": 232712,
+      "stack": 5136,
+      "seconds": 17.531
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 5,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 18.047
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 6020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 45,
+      "seconds": 18.312
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 3,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 20.125
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 8020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 20.391
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 4,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 22.203
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 10020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 1,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 22.453
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 22301,
+      "heap": 232712,
+      "stack": 5136,
+      "seconds": 22.453
+    },
+    {
+      "kind": "speech_gate",
+      "frames": 100,
+      "energy": 16,
+      "speech": 0,
+      "joint": 0,
+      "seconds": 24.281
+    },
+    {
+      "kind": "wake_window",
+      "window_ms": 2000,
+      "ready_ms": 12020,
+      "frames": 100,
+      "voice": 0,
+      "complete": 0,
+      "short": 0,
+      "clipped": 0,
+      "long": 0,
+      "matched": 0,
+      "last_matches": 0,
+      "draw_max_ms": 46,
+      "seconds": 24.281
+    }
+  ],
+  "storage_mounted": true,
+  "config_loaded": true,
+  "key_configured": true,
+  "wifi_connected": true,
+  "wifi_portal": false,
+  "ready": true,
+  "fault": false,
+  "boot_count": 1,
+  "unexpected_reset": false,
+  "version": "R13.4",
+  "wake_registered": true,
+  "elapsed_seconds": 25.031,
+  "boot_pass": true
+}

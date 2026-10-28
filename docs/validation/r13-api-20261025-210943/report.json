@@ -1,0 +1,61 @@
+{
+  "client_date": "2026-10-25",
+  "scope": "host REST contract using fixed synthetic Japanese speech; no device/microphone",
+  "models": {
+    "stt": "gemini-3.1-flash-lite",
+    "reply": "gemini-3.8-flash",
+    "tts": "gemini-3.8-flash-lite-tts"
+  },
+  "stages": [
+    {
+      "request_bytes": 202,
+      "http_status": 200,
+      "ok": true,
+      "content_type": "application/json",
+      "response_bytes": 188099,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 70,
+        "totalTokenCount": 78
+      },
+      "elapsed_seconds": 7.097,
+      "stage": "fixture_tts",
+      "input_source": "fixed_public_test_phrase",
+      "finish_reason": "STOP",
+      "audio_mime": "audio/wav",
+      "audio_bytes": 140516,
+      "sample_rate": 24000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_seconds": 2.8,
+      "sha256": "09d4ae3dac955925d63f086a9ff2826bb0e5520df3e63d81dc1a541b26b6ede5"
+    },
+    {
+      "request_bytes": 120002,
+      "http_status": 503,
+      "ok": false,
+      "api_status": "UNAVAILABLE",
+      "reason_codes": [],
+      "error_kind": "http_error",
+      "elapsed_seconds": 2.136,
+      "stage": "stt",
+      "input_source": "synthetic_question_16k",
+      "transcript_bytes": 0
+    },
+    {
+      "request_bytes": 587,
+      "http_status": 503,
+      "ok": false,
+      "api_status": "UNAVAILABLE",
+      "reason_codes": [],
+      "error_kind": "http_error",
+      "elapsed_seconds": 39.171,
+      "stage": "reply",
+      "input_source": "fixed_fixture_independent_test",
+      "answer_characters": 0,
+      "expected_answer_five": false
+    }
+  ],
+  "total_seconds": 48.416,
+  "pipeline_pass": false
+}

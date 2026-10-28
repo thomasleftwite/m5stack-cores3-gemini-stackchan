@@ -7,6 +7,7 @@ import { VoiceCameraSimulator } from "@/components/VoiceCameraSimulator";
 import { FirmwareCodeStudio } from "@/components/FirmwareCodeStudio";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { TechnicalQuestionsAndArchitecture } from "@/components/TechnicalQuestionsAndArchitecture";
+import { REPLY_MODEL } from "@/lib/gemini-models";
 import {
   Sparkles,
   Bot,
@@ -37,7 +38,7 @@ export default function HomePage() {
 
   // Settings
   const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [geminiModel, setGeminiModel] = useState("gemini-3.5-flash");
+  const [geminiModel, setGeminiModel] = useState<string>(REPLY_MODEL);
   const [ttsVoice, setTtsVoice] = useState("Kore");
   const [wakeWord, setWakeWord] = useState("スタックちゃん");
   const [silenceTimeoutSec, setSilenceTimeoutSec] = useState(6);
@@ -68,7 +69,7 @@ export default function HomePage() {
   // Reset defaults handler
   const handleResetDefaults = () => {
     setGeminiApiKey("");
-    setGeminiModel("gemini-3.8-flash");
+    setGeminiModel(REPLY_MODEL);
     setTtsVoice("Kore");
     setWakeWord("スタックちゃん");
     setSilenceTimeoutSec(6);
@@ -329,13 +330,18 @@ export default function HomePage() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-8">
+        <aside className="rounded-xl border border-amber-700 bg-amber-950/40 p-4 text-sm text-amber-100">
+          実機用R13は、ローカルの呼びかけ登録、最大15秒録音、STT→回答→TTS、音声ファイル受信後再生へ変更しました。
+          下のブラウザ対話・カメラ・設定シミュレーターは旧方式の参考デモです。実機R13は本体の設定メニューから呼びかけを3回登録します。
+          コードスタジオの配布ソースはR13です。API・実機動作は未検証です。
+        </aside>
         
         {/* Hero Section */}
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-2 items-center text-xs">
             <span className="px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono font-medium flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-cyan-400" />
-              Gemini 3.8 Flash & Gemini 3.8 Flash Lite TTS
+              {REPLY_MODEL} & Gemini 3.8 Flash-Lite TTS
             </span>
             <span className="px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono font-medium flex items-center gap-1">
               <Cpu className="w-3 h-3 text-emerald-400" />

@@ -1,0 +1,203 @@
+{
+  "client_date": "2026-10-25",
+  "scope": "offline comparison of previously captured public tables",
+  "device_access": false,
+  "user_data_read": false,
+  "firmware_or_configuration_changed": false,
+  "framework": "Arduino-ESP32 2.0.14 / package 3.20014.231204",
+  "device": {
+    "sha256": "ace02503447d0f470692e65fa76002f2d77a92dc81cd3813d8aa66718d716da9",
+    "bytes": 3072,
+    "md5_verified": true,
+    "geometry_verified": true,
+    "entries": [
+      {
+        "name": "nvs",
+        "type": 1,
+        "subtype": 2,
+        "offset": 36864,
+        "size": 20480,
+        "end_exclusive": 57344
+      },
+      {
+        "name": "otadata",
+        "type": 1,
+        "subtype": 0,
+        "offset": 57344,
+        "size": 8192,
+        "end_exclusive": 65536
+      },
+      {
+        "name": "app0",
+        "type": 0,
+        "subtype": 16,
+        "offset": 65536,
+        "size": 3145728,
+        "end_exclusive": 3211264
+      },
+      {
+        "name": "app1",
+        "type": 0,
+        "subtype": 17,
+        "offset": 3211264,
+        "size": 3145728,
+        "end_exclusive": 6356992
+      },
+      {
+        "name": "ffat",
+        "type": 1,
+        "subtype": 129,
+        "offset": 6356992,
+        "size": 10354688,
+        "end_exclusive": 16711680
+      },
+      {
+        "name": "coredump",
+        "type": 1,
+        "subtype": 3,
+        "offset": 16711680,
+        "size": 65536,
+        "end_exclusive": 16777216
+      }
+    ]
+  },
+  "build": {
+    "sha256": "ace02503447d0f470692e65fa76002f2d77a92dc81cd3813d8aa66718d716da9",
+    "bytes": 3072,
+    "md5_verified": true,
+    "geometry_verified": true,
+    "entries": [
+      {
+        "name": "nvs",
+        "type": 1,
+        "subtype": 2,
+        "offset": 36864,
+        "size": 20480,
+        "end_exclusive": 57344
+      },
+      {
+        "name": "otadata",
+        "type": 1,
+        "subtype": 0,
+        "offset": 57344,
+        "size": 8192,
+        "end_exclusive": 65536
+      },
+      {
+        "name": "app0",
+        "type": 0,
+        "subtype": 16,
+        "offset": 65536,
+        "size": 3145728,
+        "end_exclusive": 3211264
+      },
+      {
+        "name": "app1",
+        "type": 0,
+        "subtype": 17,
+        "offset": 3211264,
+        "size": 3145728,
+        "end_exclusive": 6356992
+      },
+      {
+        "name": "ffat",
+        "type": 1,
+        "subtype": 129,
+        "offset": 6356992,
+        "size": 10354688,
+        "end_exclusive": 16711680
+      },
+      {
+        "name": "coredump",
+        "type": 1,
+        "subtype": 3,
+        "offset": 16711680,
+        "size": 65536,
+        "end_exclusive": 16777216
+      }
+    ]
+  },
+  "references": [
+    {
+      "csv": "app3M_fat9M_16MB.csv",
+      "device_binary_match": true,
+      "build_binary_match": true
+    },
+    {
+      "csv": "default_16MB.csv",
+      "device_binary_match": false,
+      "build_binary_match": false
+    }
+  ],
+  "layout_match": true,
+  "device_has_default_littlefs_label": false,
+  "filesystem_contents_verified": false,
+  "firmware_bytes": 2119184,
+  "device_app0_capacity": 3145728,
+  "firmware_fits_device_app0": true,
+  "potential_layout_overlaps": [
+    {
+      "build_partition": "ffat",
+      "device_data_partition": "ffat",
+      "overlap_start": 6356992,
+      "overlap_end_exclusive": 16711680,
+      "overlap_bytes": 10354688,
+      "meaning": "potential write span; not evidence of a past write"
+    }
+  ],
+  "candidate": {
+    "csv": "docs\\design\\cores3_16mb_app3m_fat9m.csv",
+    "device_binary_match": true,
+    "sha256": "ace02503447d0f470692e65fa76002f2d77a92dc81cd3813d8aa66718d716da9",
+    "entries": [
+      {
+        "name": "nvs",
+        "type": 1,
+        "subtype": 2,
+        "offset": 36864,
+        "size": 20480,
+        "end_exclusive": 57344
+      },
+      {
+        "name": "otadata",
+        "type": 1,
+        "subtype": 0,
+        "offset": 57344,
+        "size": 8192,
+        "end_exclusive": 65536
+      },
+      {
+        "name": "app0",
+        "type": 0,
+        "subtype": 16,
+        "offset": 65536,
+        "size": 3145728,
+        "end_exclusive": 3211264
+      },
+      {
+        "name": "app1",
+        "type": 0,
+        "subtype": 17,
+        "offset": 3211264,
+        "size": 3145728,
+        "end_exclusive": 6356992
+      },
+      {
+        "name": "ffat",
+        "type": 1,
+        "subtype": 129,
+        "offset": 6356992,
+        "size": 10354688,
+        "end_exclusive": 16711680
+      },
+      {
+        "name": "coredump",
+        "type": 1,
+        "subtype": 3,
+        "offset": 16711680,
+        "size": 65536,
+        "end_exclusive": 16777216
+      }
+    ]
+  }
+}

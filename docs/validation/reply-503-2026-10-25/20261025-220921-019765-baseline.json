@@ -1,0 +1,12 @@
+{
+  "client_date": "2026-10-25",
+  "variant": "baseline",
+  "model": "gemini-3.8-flash",
+  "request_bytes": 141,
+  "http_status": null,
+  "ok": false,
+  "timeout_seconds": 15.0,
+  "proxy_configured": false,
+  "error_kind": "TimeoutError",
+  "elapsed_seconds": 15.191
+}

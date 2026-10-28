@@ -1,0 +1,7 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": false,
+  "events": [],
+  "elapsed_seconds": 180.25
+}

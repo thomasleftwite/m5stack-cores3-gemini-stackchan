@@ -1,0 +1,10 @@
+{
+  "request_bytes": 141,
+  "http_status": 503,
+  "ok": false,
+  "api_status": "UNAVAILABLE",
+  "reason_codes": [],
+  "error_kind": "http_error",
+  "elapsed_seconds": 3.838,
+  "stage": "reply_minimal_diagnostic"
+}

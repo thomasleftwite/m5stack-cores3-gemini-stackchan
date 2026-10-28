@@ -1,11 +1,12 @@
 #pragma once
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <LittleFS.h>
+#include "LocalStorage.h"
+#include "GeminiModels.h"
 
 struct AppConfig {
     String gemini_api_key = "";
-    String gemini_model = "gemini-3.5-flash";
+    String gemini_model = geminimodels::Reply;
     String tts_voice = "Kore";
     String wake_word = "スタックちゃん";
     int silence_timeout_sec = 6;
@@ -24,7 +25,7 @@ struct AppConfig {
 class ConfigManager {
 public:
     static bool save(const AppConfig& cfg) {
-        File file = LittleFS.open("/config.json", "w");
+        File file = localstorage::filesystem().open("/config.json", "w");
         if (!file) {
             Serial.println("[Config] Failed to open /config.json for writing");
             return false;
@@ -45,33 +46,29 @@ public:
         doc["servo_pan_center"] = cfg.servo_pan_center;
         doc["servo_tilt_center"] = cfg.servo_tilt_center;
 
-        serializeJsonPretty(doc, file);
+        const size_t expected = measureJsonPretty(doc);
+        const size_t written = serializeJsonPretty(doc, file);
+        file.flush();
         file.close();
-        Serial.println("[Config] Auto-created /config.json on LittleFS");
-        return true;
+        const bool ok = written == expected;
+        Serial.printf("[Config] default_saved=%d\n", int(ok));
+        return ok;
     }
 
     static bool load(AppConfig& cfg) {
-        // 1. LittleFSのマウント試行 (破損または未フォーマット時は自動フォーマット)
-        bool mounted = LittleFS.begin(false);
+        bool mounted = localstorage::begin();
+        Serial.printf("[Storage] backend=FFat mounted=%d\n", int(mounted));
         if (!mounted) {
-            Serial.println("[Config] LittleFS unformatted or corrupt. Formatting now...");
-            mounted = LittleFS.begin(true); // formatOnFail = true
-        }
-
-        if (!mounted) {
-            Serial.println("[Config] LittleFS mount failed. Using embedded defaults.");
             return false;
         }
 
         // 2. /config.json が存在しない場合はデフォルトファイルを作成して保存
-        if (!LittleFS.exists("/config.json")) {
+        if (!localstorage::filesystem().exists("/config.json")) {
             Serial.println("[Config] /config.json not found. Initializing default config file...");
-            save(cfg);
-            return true;
+            return save(cfg);
         }
 
-        File file = LittleFS.open("/config.json", "r");
+        File file = localstorage::filesystem().open("/config.json", "r");
         if (!file) {
             Serial.println("[Config] Failed to open /config.json. Using defaults.");
             return false;
@@ -87,7 +84,9 @@ public:
         }
 
         cfg.gemini_api_key = doc["gemini_api_key"] | cfg.gemini_api_key;
-        cfg.gemini_model = doc["gemini_model"] | "gemini-3.8-flash";
+        // Retain the legacy config field for export compatibility. R13 uses fixed models.
+        // Old on-device config values cannot override the approved reply model.
+        cfg.gemini_model = geminimodels::Reply;
         cfg.tts_voice = doc["tts_voice"] | "Kore";
         cfg.wake_word = doc["wake_word"] | "スタックちゃん";
         cfg.silence_timeout_sec = doc["silence_timeout_sec"] | 6;
@@ -101,7 +100,8 @@ public:
         cfg.servo_pan_center = doc["servo_pan_center"] | 90;
         cfg.servo_tilt_center = doc["servo_tilt_center"] | 90;
 
-        Serial.println("[Config] Loaded successfully from LittleFS");
+        Serial.println("[Config] Local configuration loaded.");
+        Serial.printf("[Config] key_configured=%d\n", int(!cfg.gemini_api_key.isEmpty()));
         return true;
     }
 };

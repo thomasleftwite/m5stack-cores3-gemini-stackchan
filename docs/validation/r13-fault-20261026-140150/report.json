@@ -1,0 +1,172 @@
+{
+  "scope": "allowlisted metadata only; no microphone capture",
+  "port": "COM10",
+  "reset_requested": true,
+  "events": [
+    {
+      "kind": "reset",
+      "value": "0x15",
+      "seconds": 0.406
+    },
+    {
+      "kind": "application_start",
+      "seconds": 1.969
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI04",
+      "seconds": 1.969
+    },
+    {
+      "kind": "diagnostic_revision",
+      "value": "D2",
+      "seconds": 1.969
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 1,
+      "state": 0,
+      "ms": 1731,
+      "heap": 279704,
+      "stack": 5252,
+      "seconds": 1.969
+    },
+    {
+      "kind": "ready",
+      "seconds": 10.5
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 10206,
+      "heap": 233572,
+      "stack": 5136,
+      "seconds": 10.5
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 10207,
+      "heap": 233572,
+      "stack": 5136,
+      "seconds": 10.5
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 15258,
+      "heap": 233540,
+      "stack": 5136,
+      "seconds": 15.437
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 20282,
+      "heap": 233540,
+      "stack": 5136,
+      "seconds": 20.406
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 4,
+      "ms": 21391,
+      "heap": 232352,
+      "stack": 5136,
+      "seconds": 21.453
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 5,
+      "ms": 21550,
+      "heap": 233164,
+      "stack": 5136,
+      "seconds": 21.703
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 2,
+      "state": 0,
+      "ms": 22880,
+      "heap": 233088,
+      "stack": 5136,
+      "seconds": 23.0
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 25295,
+      "heap": 233088,
+      "stack": 5136,
+      "seconds": 25.578
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 30296,
+      "heap": 233088,
+      "stack": 5136,
+      "seconds": 30.547
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 35320,
+      "heap": 233088,
+      "stack": 5136,
+      "seconds": 35.469
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 3,
+      "state": 0,
+      "ms": 40336,
+      "heap": 233088,
+      "stack": 5136,
+      "seconds": 40.391
+    }
+  ],
+  "storage_mounted": true,
+  "config_loaded": true,
+  "key_configured": true,
+  "wifi_connected": true,
+  "wifi_portal": false,
+  "ready": true,
+  "fault": false,
+  "boot_count": 1,
+  "unexpected_reset": false,
+  "pre_reset_events": [
+    {
+      "kind": "application_start"
+    },
+    {
+      "kind": "ui_revision",
+      "value": "UI04"
+    },
+    {
+      "kind": "diagnostic_revision",
+      "value": "D2"
+    },
+    {
+      "kind": "runtime_trace",
+      "event": 1,
+      "state": 0,
+      "ms": 1736,
+      "heap": 279704,
+      "stack": 5252
+    }
+  ],
+  "version": "R13.3",
+  "wake_registered": true,
+  "elapsed_seconds": 45.016,
+  "boot_pass": true
+}

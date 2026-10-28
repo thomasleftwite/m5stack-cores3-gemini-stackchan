@@ -1,0 +1,47 @@
+{
+  "scope": "device allowlisted boot state; no microphone test",
+  "port": "COM10",
+  "storage_mounted": true,
+  "config_loaded": true,
+  "key_configured": true,
+  "wifi_connected": true,
+  "wifi_portal": false,
+  "ready": true,
+  "fault": false,
+  "boot_count": 1,
+  "unexpected_reset": false,
+  "events": [
+    {
+      "seconds": 0.422,
+      "kind": "rom_start"
+    },
+    {
+      "seconds": 0.422,
+      "kind": "reset_reason_0x15"
+    },
+    {
+      "seconds": 1.984,
+      "kind": "application_start"
+    },
+    {
+      "seconds": 1.984,
+      "kind": "fat_mounted"
+    },
+    {
+      "seconds": 1.984,
+      "kind": "config_loaded"
+    },
+    {
+      "seconds": 10.359,
+      "kind": "wifi_connected"
+    },
+    {
+      "seconds": 10.359,
+      "kind": "ready"
+    }
+  ],
+  "version": "R13.3",
+  "wake_registered": false,
+  "elapsed_seconds": 45.063,
+  "boot_pass": true
+}

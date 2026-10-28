@@ -1,0 +1,11 @@
+{
+  "client_date": "2026-10-25",
+  "variant": "no_thinking",
+  "model": "gemini-3.8-flash",
+  "request_bytes": 100,
+  "http_status": null,
+  "ok": false,
+  "proxy_configured": false,
+  "error_kind": "TimeoutError",
+  "elapsed_seconds": 20.189
+}

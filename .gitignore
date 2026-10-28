@@ -1,6 +1,8 @@
 node_modules/
 firmware/.pio/
 firmware/data/config.json
+data/config.json
+.pio/
 .next/
 coverage/
 .DS_Store
@@ -10,3 +12,4 @@ coverage/
 
 firmware/.pio-core/
 .npm-cache/
+__pycache__/

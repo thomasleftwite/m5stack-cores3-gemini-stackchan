@@ -1,0 +1,13 @@
+{
+  "name": "libfvad",
+  "version": "1.0.0",
+  "license": "BSD-3-Clause",
+  "build": {
+    "includeDir": "include",
+    "srcDir": "src",
+    "flags": [
+      "-fwrapv",
+      "-std=gnu11"
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "client_date": "2026-10-25",
+  "scope": "fixed Japanese question and structured reply; no actual user audio",
+  "list_http_status": 200,
+  "generation_config": {
+    "maxOutputTokens": 2048,
+    "responseMimeType": "application/json"
+  },
+  "thinking": "model default; omitted to keep one common request across generations",
+  "results": [
+    {
+      "model": "gemini-3.5-flash-lite",
+      "listed": true,
+      "production_setting_changed": false,
+      "request_bytes": 546,
+      "http_status": 200,
+      "ok": true,
+      "content_type": "application/json",
+      "response_bytes": 817,
+      "usage": {
+        "promptTokenCount": 88,
+        "candidatesTokenCount": 23,
+        "totalTokenCount": 111
+      },
+      "elapsed_seconds": 1.344,
+      "tested": true,
+      "finish_reason": "STOP",
+      "text_bytes": 92,
+      "answer_characters": 20,
+      "expected_answer_five": true,
+      "answer_judge": "kana-aware-v2",
+      "emotion_valid": true,
+      "protocol_ok": true
+    }
+  ]
+}
